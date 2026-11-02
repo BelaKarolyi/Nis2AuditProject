@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIS2-AuditGuard | Kiberbiztonsági Audit-felkészítés és AI Előszűrés</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --accent: #0284c7;
+            --text-main: #1e293b;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text-main);
+            scroll-behavior: smooth;
+        }
+        /* Akadálymentes (WCAG) osztályok - NKI és SZTFH minta alapján */
+        body.high-contrast {
+            background-color: #000 !important;
+            color: #ffff00 !important;
+        }
+        body.high-contrast .card, body.high-contrast .bg-light, body.high-contrast .navbar {
+            background-color: #111 !important;
+            color: #ffff00 !important;
+            border: 2px solid #ffff00 !important;
+        }
+        body.large-font {
+            font-size: 1.2rem !important;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: #fff;
+            padding: 5rem 0;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: #fff;
+        }
+        .draft-badge {
+            background-color: #fef08a;
+            color: #854d0e;
+            font-weight: 700;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid #eab308;
+            display: inline-block;
+        }
+        /* Honeypot mező elrejtése emberi látogatók elől (Bot-csapda) */
+        .hp-field {
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 0;
+            width: 0;
+            z-index: -1;
+        }
+        #cookieBanner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            color: #fff;
+            z-index: 9999;
+            border-top: 3px solid #0284c7;
+            padding: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. NAVIGÁCIÓ + AKADÁLYMENTESÍTŐ SÁV (NENKI/SZTFH minta, NINCS publikus admin belépő!) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">🛡️ NIS2-AuditGuard</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="#erintettseg">AI Előszűrő</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#kalkulator">Irányár-kalkulátor</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#folyamat">Audit folyamat</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#gyik">GYIK</a></li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <button class="btn btn-outline-light btn-sm" onclick="toggleFontSize()" title="Betűméret növelése (Akadálymentes nézet)">A+</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="toggleContrast()" title="Magas kontraszt (Látássérült mód)">◑ Kontraszt</button>
+                    <span class="badge bg-success ms-2" title="A menedzseri és auditori felület fizikailag/hálózatilag izolált (Zero Public Exposure)">🔒 Zárt Architektúra</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 2. HERO SZEKCIÓ -->
+    <header class="hero-section">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-7">
+                    <span class="badge bg-info text-dark mb-3 px-3 py-2 fw-semibold">2024. évi LXIX. törvény · 7/2024. (VI. 24.) MK rendelet</span>
+                    <h1 class="display-5 fw-bold mb-3">NIS2 Audit-felkészítés és Érintettségi Előszűrés</h1>
+                    <p class="lead mb-4">
+                        Fehér dobozos, forrásmegjelölő mesterséges intelligenciával támogatott előszűrés és szakértői audit-előkészítés. Ügyféladataink 100%-ban zárt, EU-s/lokális környezetben maradnak, a belső tanácsadói munkafelület publikus internetről nem érhető el.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="#erintettseg" class="btn btn-info btn-lg fw-bold text-dark">Ingyenes AI Előszűrés Indítása</a>
+                        <a href="#kalkulator" class="btn btn-outline-light btn-lg">Irányár-kalkulátor</a>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stat-card text-center">
+                                <h3 class="fw-bold text-warning">10 M€ / 2%</h3>
+                                <p class="small mb-0">EU NIS2 bírság felső határa alapvető szervezeteknél</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card text-center">
+                                <h3 class="fw-bold text-danger">150 M Ft</h3>
+                                <p class="small mb-0">Bírságplafon regisztráció vagy audit elmulasztásáért</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card text-center">
+                                <h3 class="fw-bold text-info">24 / 72 óra</h3>
+                                <p class="small mb-0">Korai riasztás és incidensbejelentés az NKI CSIRT felé</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card text-center">
+                                <h3 class="fw-bold text-success">2 évente</h3>
+                                <p class="small mb-0">Kötelező megismételni a kiberbiztonsági auditot</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3. INTERAKTÍV AI ELŐSZŰRŐ MODUL (1. Választott AI-funkció) -->
+    <section id="erintettseg" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">1. AI-Modul: NIS2 Érintettségi Előszűrés és Dinamikus Kérdező</h2>
+                <p class="text-muted">A 2024. évi LXIX. törvény 1. §-a és 2–3. melléklete alapján, forrásmegjelöléssel és bizonytalanság-jelzéssel.</p>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form id="preScreenForm" onsubmit="runAiPreScreening(event)">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">1. Melyik ágazatban működik a szervezet? *</label>
+                                <select id="sectorSelect" class="form-select" required onchange="updateDynamicQuestions()">
+                                    <option value="">-- Válasszon ágazatot --</option>
+                                    <option value="M2_ENERGIA">Energetika (Villamos energia, távhő, kőolaj, földgáz, hidrogén - 2. melléklet)</option>
+                                    <option value="M2_KOZLEKEDES">Közlekedés (Légi, vasúti, vízi, közúti - 2. melléklet)</option>
+                                    <option value="M2_EGESZSEGUGY">Egészségügy és gyógyszergyártás (2. melléklet)</option>
+                                    <option value="M2_DIGITALIS_INFRA">Digitális infrastruktúra (DNS, TLD, felhőszolgáltató, adatközpont, elektronikus hírközlés - 2. melléklet)</option>
+                                    <option value="M2_BIZALMI">Bizalmi szolgáltató (Mérettől függetlenül érintett! - 2. melléklet)</option>
+                                    <option value="M3_GYARTAS">Gyártás (Cement/mész/gipsz, gépgyártás, járműgyártás, elektronika - 3. melléklet)</option>
+                                    <option value="M3_DIGITALIS_SZOLG">Digitális szolgáltatók (Online piactér, keresőmotor, közösségi média - 3. melléklet)</option>
+                                    <option value="M3_ELELMISZER_HULLADEK">Élelmiszeripar, Vegyipar vagy Hulladékgazdálkodás (3. melléklet)</option>
+                                    <option value="M3_KUTATAS">Kutatás / Kutatóhely (3. melléklet)</option>
+                                    <option value="BESZALLITO">Egyik sem, de NIS2-érintett nagyvállalat IT/üzleti beszállítója vagyunk</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">2. Foglalkoztatotti létszám (partner/kapcsolt cégekkel) *</label>
+                                <select id="headcountSelect" class="form-select" required>
+                                    <option value="UNDER_50">50 fő alatt (Mikro- vagy kisvállalkozás)</option>
+                                    <option value="50_249">50 – 249 fő (Középvállalkozás)</option>
+                                    <option value="250_PLUS">250 fő vagy afelett (Nagyvállalat)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">3. Éves nettó árbevétel (és mérlegfőösszeg) *</label>
+                                <select id="revenueSelect" class="form-select" required>
+                                    <option value="UNDER_10M">10 millió EUR alatt (és mérlegfőösszeg < 10M EUR)</option>
+                                    <option value="10M_50M">10 – 50 millió EUR között (vagy mérlegfőösszeg 10–43M EUR)</option>
+                                    <option value="OVER_50M">50 millió EUR felett (és mérlegfőösszeg > 43M EUR)</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">4. Tevékenység és használt informatikai rendszerek (EIR) rövid leírása *</label>
+                                <textarea id="activityDesc" class="form-control" rows="2" placeholder="Pl.: Autóipari alkatrészgyártás, SAP ERP rendszer, 2 telephely, Microsoft 365 felhő, távoli VPN elérés..." required></textarea>
+                            </div>
+
+                            <!-- Dinamikus tisztázó kérdések (25 kérdéses bank reprezentációja) -->
+                            <div class="col-12">
+                                <div class="p-3 bg-white border rounded">
+                                    <h6 class="fw-bold text-primary mb-2">🔍 Dinamikus AI-tisztázó kérdések (A pontos jogszabályi besoroláshoz):</h6>
+                                    <div class="row g-2 small">
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="qCloud">
+                                                <label class="form-check-label" for="qCloud">Vesznek igénybe nem privát felhőszolgáltatást vagy külföldi adatkezelést? (2024. évi LXIX. tv. 9. §)</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="qParentCompany">
+                                                <label class="form-check-label" for="qParentCompany">Tartozik a cég nagyobb vállalatcsoporthoz (partner/kapcsolódó vállalkozás összeszámítás)?</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="qIbfAssigned">
+                                                <label class="form-check-label" for="qIbfAssigned">Kijelölték már az elektronikus információs rendszer biztonságáért felelős személyt (IBF - 11. §)?</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="qSupplyChain">
+                                                <label class="form-check-label" for="qSupplyChain">Rendelkeznek közvetlen hálózati összeköttetéssel NIS2-kötelezett megrendelő rendszerével?</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary btn-lg px-4">Fehér Dobozos AI-Értékelés Generálása</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- FEHÉR DOBOZOS AI EREDMÉNYKÁRTYA (6 kötelező kérdés megválaszolása) -->
+                    <div id="aiResultCard" class="mt-4 p-4 border rounded bg-white shadow-sm d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <h4 class="fw-bold mb-0">🤖 Előzetes AI Érintettségi Értékelés</h4>
+                            <span class="draft-badge">TERVEZET – SZAKÉRTŐI FELÜLVIZSGÁLAT SZÜKSÉGES</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <p class="mb-1 fw-bold text-secondary">1. Mit állít az AI? (Előzetes besorolás):</p>
+                                <div id="resStatement" class="p-2 bg-light border rounded fw-bold"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1 fw-bold text-secondary">2. Mire alapozza? (Felhasznált bemeneti válaszok):</p>
+                                <div id="resBasis" class="p-2 bg-light border rounded small"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1 fw-bold text-secondary">3. Mely jogszabályi követelményhez kapcsolódik?</p>
+                                <div id="resLaw" class="p-2 bg-light border rounded small text-primary fw-semibold"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1 fw-bold text-secondary">4. Mennyire biztos az eredmény & Bizonytalanságok:</p>
+                                <div id="resConfidence" class="p-2 bg-light border rounded small"></div>
+                            </div>
+                            <div class="col-12">
+                                <p class="mb-1 fw-bold text-secondary">5. Mit kell a szakértőnek ellenőriznie & Generált tisztázó kérdések:</p>
+                                <div id="resHumanCheck" class="p-2 bg-warning-subtle border border-warning rounded small"></div>
+                            </div>
+                        </div>
+                        <p class="text-muted small mt-3 mb-0">
+                            <em>Jogi nyilatkozat: Tájékoztató jellegű gyorsteszt a 2024. évi LXIX. törvény 1. §-a és 2–3. melléklete alapján; nem minősül hivatalos jogi állásfoglalásnak.</em>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. INTERAKTÍV IRÁNYÁR-KALKULÁTOR ÉS AJÁNLATKÉRŐ ŰRLAP -->
+    <section id="kalkulator" class="py-5">
+        <div class="container">
+            <div class="row g-5">
+                <!-- Bal oldal: Dinamikus Kalkulátor (zemITis és SZTFH rendelet logika) -->
+                <div class="col-lg-6">
+                    <h3 class="fw-bold mb-3">Mennyibe kerül a NIS2 felkészítés és az audit?</h3>
+                    <p class="text-muted">Állítsa be a paramétereket a felkészítési irányár (3–8 M Ft) és az SZTFH rendelet szerinti hatósági audit alapdíj-szorzó (1 750 000 Ft) becsléséhez.</p>
+
+                    <div class="card border-0 shadow-sm p-4 bg-light">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold d-flex justify-content-between">
+                                <span>Szervezet létszáma:</span>
+                                <span id="empVal" class="text-primary">80 fő</span>
+                            </label>
+                            <input type="range" class="form-range" id="empSlider" min="10" max="500" step="10" value="80" oninput="calcPrice()">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold d-flex justify-content-between">
+                                <span>Kiberbiztonsági érettség (1–5):</span>
+                                <span id="matVal" class="text-primary">3 – Fejlődő</span>
+                            </label>
+                            <input type="range" class="form-range" id="matSlider" min="1" max="5" step="1" value="3" oninput="calcPrice()">
+                            <small id="matDesc" class="text-muted d-block mt-1">Főbb szabályzatok megvannak, de nincs rendszeres felülvizsgálat, visszaállítási próba és oktatás.</small>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">EIR-ek (Rendszerek) száma</label>
+                                <select id="eirCount" class="form-select" onchange="calcPrice()">
+                                    <option value="1">1 – 5 db EIR</option>
+                                    <option value="1.35">6 – 15 db EIR</option>
+                                    <option value="1.7">15+ db EIR</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Legmagasabb biztonsági osztály</label>
+                                <select id="secClass" class="form-select" onchange="calcPrice()">
+                                    <option value="1">Alap biztonsági osztály</option>
+                                    <option value="1.25">Jelentős biztonsági osztály</option>
+                                    <option value="1.55">Magas biztonsági osztály</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-white rounded border text-center">
+                            <div class="small text-muted">Tanácsadói felkészítés várható nettó irányára:</div>
+                            <div id="prepPrice" class="display-6 fw-bold text-primary my-1">3,8 – 4,6 M Ft + ÁFA</div>
+                            <hr class="my-2">
+                            <div class="small text-muted">Hatósági audit tájékoztató díjalap (1 750 000 Ft szorzószámmal): <strong id="auditFeeInfo">1,75 M Ft-tól</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jobb oldal: Védett Ajánlatkérő Űrlap (Honeypot + Time-trap + GDPR) -->
+                <div class="col-lg-6">
+                    <h3 class="fw-bold mb-3">Kérjen szakértői felülvizsgálatot és ajánlatot</h3>
+                    <p class="text-muted">Regisztráció nem szükséges. A beküldött adatokat lokálisan, titkosítva továbbítjuk belső tanácsadói munkaállomásunkra.</p>
+
+                    <form id="leadForm" class="card border-0 shadow-sm p-4" onsubmit="submitLeadForm(event)">
+                        <!-- HONEYPOT CSAPDA SPAM BOTOK ELLEN (SuperiorPentest és zemITis minta alapján) -->
+                        <div class="hp-field" aria-hidden="true">
+                            <label for="website_url_hp">Kérem, ezt a mezőt hagyja üresen!</label>
+                            <input type="text" id="website_url_hp" name="website_url_hp" tabindex="-1" autocomplete="off">
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Kapcsolattartó neve *</label>
+                                <input type="text" id="contactName" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Cégnév *</label>
+                                <input type="text" id="companyName" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Céges e-mail cím *</label>
+                                <input type="email" id="contactEmail" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Telefonszám *</label>
+                                <input type="tel" id="contactPhone" class="form-control" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Milyen szolgáltatás érdekli?</label>
+                                <select id="serviceType" class="form-select">
+                                    <option value="TELJES_FELKESZITES">Teljes NIS2 audit-felkészítés és Gap-analízis</option>
+                                    <option value="SZTFH_REG">SZTFH regisztráció és EIR biztonsági osztályba sorolás</option>
+                                    <option value="KISZERVEZETT_IBF">Kiszervezett IBF (EIRB felelős) szolgáltatás</option>
+                                    <option value="PENTEST">Sérülékenységvizsgálat / Penetrációs tesztelés</option>
+                                    <option value="BESZALLITOI_CSOMAG">Beszállítói NIS2 megfelelőségi bizonyítékcsomag</option>
+                                </select>
+                            </div>
+
+                            <!-- GDPR ÉS ZÁRT AI ADATKEZELÉSI KIKÖTÉSEK -->
+                            <div class="col-12">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="gdprConsent" required>
+                                    <label class="form-check-label small" for="gdprConsent">
+                                        Hozzájárulok, hogy a NIS2-AuditGuard üzemeltetője a megadott személyes adataimat az előzetes érintettségi értékelés és ajánlatadás céljából kezelje. Kijelentem, hogy az <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Adatkezelési tájékoztatót</a> elolvastam és elfogadom. *
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="aiPrivacyAck" checked disabled>
+                                    <label class="form-check-label small text-muted" for="aiPrivacyAck">
+                                        Tudomásul veszem, hogy a rendszer a 2024. évi LXIX. tv. 9. §-ával és az MKIK-54 állásfoglalással összhangban a cégadatokat lokálisan anonimizálja, külső AI-modell tanítására nem használja fel, és az EU-n kívülre nem továbbítja.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Ajánlatkérés és Előszűrés Mentése</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Sikeres beküldés visszajelzés + Offline JSON csomag letöltése a demóhoz -->
+                    <div id="leadSuccessBox" class="alert alert-success mt-3 d-none">
+                        <h6 class="fw-bold">✅ Ajánlatkérés és előszűrés sikeresen rögzítve!</h6>
+                        <p class="small mb-2">Ügyfél-azonosító: <strong id="generatedLeadId"></strong>. Az adatcsomag készen áll a belső (offline) Menedzseri/Auditori munkaállomáson történő feldolgozásra.</p>
+                        <button class="btn btn-sm btn-outline-dark" onclick="downloadLeadJson()">📥 Ügyfél-adatcsomag (.JSON) letöltése az Offline Menedzseri Felülethez</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. AUDIT FOLYAMAT ÉS TIPIKUS HIÁNYOSSÁGOK -->
+    <section id="folyamat" class="py-5 bg-light">
+        <div class="container">
+            <h3 class="fw-bold text-center mb-4">Audit módszertan (NIST SP 800-53A Rev 5 & 7/2024. MK rendelet) és Tipikus Bukási Pontok</h3>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 shadow-sm p-3">
+                        <span class="badge bg-primary w-25 mb-2">1. Lépés</span>
+                        <h6 class="fw-bold">EIR Leltár & Osztályozás</h6>
+                        <p class="small text-muted mb-0">Elektronikus információs rendszerek felmérése, adatosztályozás (4. § 8.) és biztonsági osztályba sorolás (Alap / Jelentős / Magas).</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 shadow-sm p-3">
+                        <span class="badge bg-primary w-25 mb-2">2. Lépés</span>
+                        <h6 class="fw-bold">AI Gap-Analízis & Szabályzatok</h6>
+                        <p class="small text-muted mb-0">IBSZ, hozzáférés-kezelési, mentési és incidenskezelési szabályzatok zárt, anonimizált összevetése a törvényi kontrollokkal.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 shadow-sm p-3">
+                        <span class="badge bg-primary w-25 mb-2">3. Lépés</span>
+                        <h6 class="fw-bold">Bizonyítékgyűjtés & Interjú</h6>
+                        <p class="small text-muted mb-0">Visszaállítási próba jegyzőkönyvek, AD jogosultsági listák, 2FA, naplózás (SIEM) és oktatási jelenléti ívek ellenőrzése.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 shadow-sm p-3">
+                        <span class="badge bg-primary w-25 mb-2">4. Lépés</span>
+                        <h6 class="fw-bold">VMI / SZEKI & Auditjelentés</h6>
+                        <p class="small text-muted mb-0">Védelmi Megfelelési Index (VMI) és Szervezet Ellenálló-képességi Index (SZEKI) előkészítése, jelentés beküldése az SZTFH-nak 7 napon belül.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. GYIK (ACCORDION) -->
+    <section id="gyik" class="py-5">
+        <div class="container">
+            <h3 class="fw-bold text-center mb-4">Gyakori Kérdések (NIS2 & Adatbiztonság)</h3>
+            <div class="accordion" id="faqAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            Miért nincs ezen a weboldalon nyilvános „Menedzseri / Auditor Bejelentkezés” gomb?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body small">
+                            A <strong>2024. évi LXIX. törvény 38. § c) és i) pontjai</strong> (tervezetten biztonságos működés és jogosultságkezelés), valamint az <strong>MKIK-58 (Hardening)</strong> állásfoglalás alapján a belső tanácsadói és menedzseri munkafelületet fizikailag és hálózatilag leválasztottuk a publikus internetről (Zero Public Exposure). Így a vizsgált vállalatok szabályzatai és sérülékenységi adatai kívülről semmilyen módon nem támadhatók.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            Elég az ISO 27001 tanúsítvány a NIS2 megfeleléshez?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body small">
+                            Nem automatikusan. Az ISO/IEC 27001 kiváló alapot ad, de a magyar NIS2 szabályozás (2024. évi LXIX. tv. és 7/2024. MK rendelet) egyedi hazai követelményeket (pl. biztonsági osztályba sorolás, VMI/SZEKI mutatók, SZTFH regisztráció, 24/72 órás NKI CSIRT bejelentés) ír elő, amelyeket külön gap-analízissel kell lefedni.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. LÁBLÉC (FOOTER) -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container d-flex flex-wrap justify-content-between align-items-center small">
+            <div>
+                <strong>© 2026 NIS2-AuditGuard</strong> · Készítette: Károlyi Béla (FULABV) · Milton Friedman Egyetem<br>
+                <span class="text-secondary">MKIK-61 másolásvédelmi nyilatkozat: Az oldal szöveg- és kódállománya szerzői jogi védelem alatt áll.</span>
+            </div>
+            <div class="d-flex gap-3 mt-2 mt-md-0">
+                <a href="#" class="text-light" data-bs-toggle="modal" data-bs-target="#privacyModal">Adatkezelési tájékoztató</a>
+                <a href="https://incidens.nki.gov.hu/" target="_blank" rel="noopener" class="text-info">NKI Incidensbejelentés</a>
+                <a href="https://sztfh.hu/nyilvantartasok/auditorok/" target="_blank" rel="noopener" class="text-info">SZTFH Auditor lista</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ADATKEZELÉSI TÁJÉKOZTATÓ MODAL (GDPR) -->
+    <div class="modal fade" id="privacyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">GDPR Adatkezelési és Zárt AI-Feldolgozási Tájékoztató</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body small">
+                    <p><strong>1. Adatkezelő:</strong> NIS2-AuditGuard Projekt (Károlyi Béla - FULABV, Milton Friedman Egyetem).</p>
+                    <p><strong>2. Kezelt adatok köre és célja:</strong> Az ajánlatkérő űrlapon megadott kapcsolattartási adatok (név, cégnév, e-mail, telefonszám) és a vállalati méret/ágazati adatok kezelése kizárólag az előzetes NIS2 érintettségi értékelés és tanácsadói kapcsolatfelvétel céljából történik (GDPR 6. cikk (1) a) és b) pont).</p>
+                    <p><strong>3. Adattárolás helye és NIS2 9. § megfelelés:</strong> Az adatok kizárólag Magyarországon / Európai Unión belüli lokális SQL adatbázisban tárolódnak. Harmadik országba (EU-n kívülre) adattovábbítás nem történik.</p>
+                    <p><strong>4. Mesterséges intelligencia (AI) és Anonimizálás (MKIK-54):</strong> A belső dokumentumelemzés során a rendszer a cégneveket, személyes adatokat és IP-címeket lokális C# szűrővel maszkolja (<code>[ÜGYFÉL_SZERVEZET]</code>), mielőtt bármilyen nyelvi modell feldolgozná. Az adatok nem kerülnek felhasználásra modelltanításra.</p>
+                    <p><strong>5. Adatmegőrzési idő (MKIK-14 biztonságos törlés):</strong> Sikertelen ajánlatkérés esetén 90 nap; szerződéskötés és audit esetén a jogszabályi megőrzési idő (5 év).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEBEGŐ GDPR COOKIE BANNER -->
+    <div id="cookieBanner" class="d-none">
+        <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="small" style="max-width: 750px;">
+                <strong>🍪 Sütik (Cookie-k) és biztonsági munkamenet kezelése:</strong> Weboldalunk a biztonságos működéshez (CSRF támadás elleni védelem, spam-szűrés és a süti-döntés megőrzése) elengedhetetlen technikai sütiket használ. Analitikai sütiket csak az Ön hozzájárulásával alkalmazunk.
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-light btn-sm" onclick="acceptCookies('essential')">Csak a szükségesek</button>
+                <button class="btn btn-info btn-sm fw-bold text-dark" onclick="acceptCookies('all')">Összes elfogadása</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS + Interaktív Üzleti Logika -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const pageLoadTimestamp = Date.now();
+        let lastSavedLead = null;
+
+        // Cookie banner inicializálás
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('nis2_cookie_consent')) {
+                document.getElementById('cookieBanner').classList.remove('d-none');
+            }
+            calcPrice();
+        });
+
+        function acceptCookies(level) {
+            localStorage.setItem('nis2_cookie_consent', level);
+            document.getElementById('cookieBanner').classList.add('d-none');
+        }
+
+        // Akadálymentesítő funkciók
+        function toggleContrast() { document.body.classList.toggle('high-contrast'); }
+        function toggleFontSize() { document.body.classList.toggle('large-font'); }
+
+        // 1. AI-Modul: Fehér dobozos érintettségi előszűrés logika
+        function runAiPreScreening(e) {
+            e.preventDefault();
+            const sector = document.getElementById('sectorSelect').value;
+            const headcount = document.getElementById('headcountSelect').value;
+            const revenue = document.getElementById('revenueSelect').value;
+            const desc = document.getElementById('activityDesc').value;
+            const hasCloud = document.getElementById('qCloud').checked;
+            const hasParent = document.getElementById('qParentCompany').checked;
+
+            let category = "Nem érintett közvetlenül (Méretküszöb alatt)";
+            let lawRef = "2024. évi LXIX. törvény 1. § és 2–3. melléklet";
+            let confidence = "88%";
+
+            const isMediumOrLarge = (headcount !== "UNDER_50" || revenue !== "UNDER_10M");
+
+            if (sector === "M2_BIZALMI") {
+                category = "KIEMELTEN KOCKÁZATOS (Alapvető) szervezet – Mérettől függetlenül NIS2 kötelezett!";
+                lawRef = "2024. évi LXIX. tv. 1. §, 5. § (4) bek. és 2. melléklet (Bizalmi szolgáltatók)";
+                confidence = "96%";
+            } else if (sector.startsWith("M2_") && isMediumOrLarge) {
+                category = (headcount === "250_PLUS" || revenue === "OVER_50M")
+                    ? "KIEMELTEN KOCKÁZATOS (Alapvető) szervezet (2. melléklet)"
+                    : "KOCKÁZATOS (Fontos) szervezet (2. melléklet, középvállalati méret)";
+                lawRef = "2024. évi LXIX. tv. 1. §, 5. § (4) bek., 10. § és 2. melléklet";
+                confidence = "94%";
+            } else if (sector.startsWith("M3_") && isMediumOrLarge) {
+                category = "KOCKÁZATOS (Fontos) szervezet (3. melléklet)";
+                lawRef = "2024. évi LXIX. tv. 1. §, 5. § (4) bek. és 3. melléklet";
+                confidence = "92%";
+            } else if (sector === "BESZALLITO" || document.getElementById('qSupplyChain').checked) {
+                category = "KÖZVETVE ÉRINTETT (Ellátási lánc / Beszállítói NIS2 kötelezettség)";
+                lawRef = "2024. évi LXIX. tv. 5. § (2) bek., 17. § (Támogató rendszerek) és 18. §";
+                confidence = "85%";
+            }
+
+            document.getElementById('resStatement').innerText = category;
+            document.getElementById('resBasis').innerText =
+                `Megadott ágazati kód: ${sector} | Létszámkategória: ${headcount} | Árbevétel: ${revenue} | Rendszerleírás: "${desc.substring(0, 80)}..."`;
+            document.getElementById('resLaw').innerText =
+                lawRef + (hasCloud ? " + 9. § (2)-(4) bek. (Nem privát felhőszolgáltatás és külföldi adatkezelés adatosztályozási kötelezettsége)" : "");
+            document.getElementById('resConfidence').innerText =
+                `Megbízhatósági szint: ${confidence}. Bizonytalansági tényező: ${hasParent ? "Vállalatcsoport (partner/kapcsolt vállalkozások) létszám- és árbevétel-összeszámítása manuális cégjogi ellenőrzést igényel!" : "A főtevékenység TEÁOR/NACE kódjának és az elektronikus információs rendszerek (EIR) pontos határainak szakértői validálása szükséges."}`;
+            document.getElementById('resHumanCheck').innerHTML =
+                `<strong>Tanácsadónak ellenőrizendő:</strong> 1) Cégkivonat és kapcsolt vállalkozások összeszámítása; 2) EIR-ek biztonsági osztályba sorolása (7/2024. MK rendelet); 3) SZTFH regisztráció (30/90/120 napos határidők) állapota.`;
+
+            document.getElementById('aiResultCard').classList.remove('d-none');
+        }
+
+        // 2. Irányár-kalkulátor logika
+        function calcPrice() {
+            const emp = parseInt(document.getElementById('empSlider').value);
+            const mat = parseInt(document.getElementById('matSlider').value);
+            const eirMult = parseFloat(document.getElementById('eirCount').value);
+            const secMult = parseFloat(document.getElementById('secClass').value);
+
+            document.getElementById('empVal').innerText = emp + " fő";
+            const matLabels = {
+                1: "1 – Kezdeti (Nincsenek szabályzatok)",
+                2: "2 – Alapszintű (Részleges dokumentáció)",
+                3: "3 – Fejlődő (Főbb szabályzatok megvannak)",
+                4: "4 – Menedzselt (Rendszeres kontrollok)",
+                5: "5 – Audit-kész (ISO 27001 / Magas érettség)"
+            };
+            document.getElementById('matVal').innerText = matLabels[mat];
+
+            // Alapdíj számítás (3,0 és 8,0 M Ft között)
+            let baseMin = 2.8 + (emp / 500) * 1.8 + ((6 - mat) * 0.35);
+            baseMin = Math.min(7.2, Math.max(3.0, baseMin * (eirMult * 0.85)));
+            let baseMax = baseMin + 0.8;
+
+            document.getElementById('prepPrice').innerText =
+                `${baseMin.toFixed(1).replace('.', ',')} – ${baseMax.toFixed(1).replace('.', ',')} M Ft + ÁFA`;
+
+            // SZTFH 1 750 000 Ft-os szorzószám indikáció
+            const auditEstimate = (1.75 * eirMult * secMult).toFixed(2).replace('.', ',');
+            document.getElementById('auditFeeInfo').innerText = `~${auditEstimate} M Ft + ÁFA (max. díjplafon szorzó)`;
+        }
+
+        // 3. Ajánlatkérő űrlap beküldés (Honeypot + Time-trap védelem + Offline JSON export)
+        function submitLeadForm(e) {
+            e.preventDefault();
+
+            // Bot-védelem #1: Honeypot ellenőrzés
+            const hp = document.getElementById('website_url_hp').value;
+            if (hp && hp.trim() !== "") {
+                alert("Spam védelem aktiválódott (Honeypot).");
+                return;
+            }
+
+            // Bot-védelem #2: Időcsapda (3 másodpercen belüli kitöltés)
+            if (Date.now() - pageLoadTimestamp < 3000) {
+                alert("Túl gyors beküldés (Bot-gyanú). Kérjük, próbálja újra!");
+                return;
+            }
+
+            const leadId = "NIS2-2026-" + Math.floor(1000 + Math.random() * 9000);
+            lastSavedLead = {
+                ugyfelAzonosito: leadId,
+                bekuldesIdeje: new Date().toISOString(),
+                kapcsolattarto: document.getElementById('contactName').value,
+                cegnev: document.getElementById('companyName').value,
+                email: document.getElementById('contactEmail').value,
+                telefon: document.getElementById('contactPhone').value,
+                igenyeltSzolgaltatas: document.getElementById('serviceType').value,
+                agazat: document.getElementById('sectorSelect').value || "NEM_KITOLTOTT",
+                elozetesAiBesorolas: document.getElementById('resStatement').innerText || "Még nem futtatott előszűrést",
+                becsultIranyar: document.getElementById('prepPrice').innerText,
+                statusz: "TERVEZET – BELSŐ AUDITORI FELÜLVIZSGÁLATRA VÁR"
+            };
+
+            localStorage.setItem('nis2_last_lead', JSON.stringify(lastSavedLead));
+            document.getElementById('generatedLeadId').innerText = leadId;
+            document.getElementById('leadSuccessBox').classList.remove('d-none');
+        }
+
+        function downloadLeadJson() {
+            if (!lastSavedLead) return;
+            const blob = new Blob([JSON.stringify(lastSavedLead, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${lastSavedLead.ugyfelAzonosito}_offline_import.json`;
+            a.click();
+        }
+    </script>
+</body>
+</html>
+
