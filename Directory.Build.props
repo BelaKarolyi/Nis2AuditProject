@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    NIS2-AuditGuard – közös build-beállítások minden projektre.
+    A figyelmeztetések hibaként kezelése a "kód tisztasága" értékelési szempontot támogatja.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Authors>Károlyi Béla (FULABV)</Authors>
+    <Company>Milton Friedman Egyetem</Company>
+    <Product>NIS2-AuditGuard</Product>
+  </PropertyGroup>
+</Project>
+
