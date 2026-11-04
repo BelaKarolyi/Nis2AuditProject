@@ -58,3 +58,4 @@ A **NIS2-AuditGuard** egy mesterséges intelligenciával támogatott, kétzóná
   * `02_Specifikacio_HLD_BPMN_es_WebBiztonsag_NIS2_AuditGuard_FULABV.docx` / `HLD_NIS2_AuditGuard.docx` – Specifikáció, Alternatívák, HLD, BPMN 2.0 (20%).
   * `03_AI_Modell_es_Felhasznaloi_Dokumentacio_NIS2_AuditGuard_FULABV.docx` / `Dokumentacio_Fejlesztoi_Felhasznaloi_AI_NIS2.docx` – Fejlesztői, Felhasználói és AI-modell dokumentáció (20%).
 * `archive/` – Korábbi statikus HTML prototípusok (`archive/prototypes/`) és kezdeti egyfájlos kódvázlatok (`archive/legacy/`).
+

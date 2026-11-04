@@ -140,3 +140,6 @@ static bool AppendPadVersionRowIfMissing(Body body)
     table.Append(newRow);
     return true;
 }
+
+// Golden-Set AI-eredményességmérés (`dotnet run --project tests/Nis2AuditGuard.Eval -- eval`)
+// A felső szintű parancskezelő bővítéséhez külön segédfüggvényként is meghívható.

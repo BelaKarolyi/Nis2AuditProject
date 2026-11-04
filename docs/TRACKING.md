@@ -48,3 +48,4 @@
 ### Konzultáció és Végső Védés (Egyetemi órarend szerint)
 * **2026. november 20. (13:30 – 16:05, C107):** Konzultáció és előrehaladási bemutató Dr. Bárkányi Pálnál.
 * **2026. december 11. (16:20 – 20:20):** Végső projektbemutató és védés (Offline/Failover élő demóval).
+
