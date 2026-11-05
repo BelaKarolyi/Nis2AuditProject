@@ -50,10 +50,11 @@ Nis2AuditGuard.sln
 ├── database/
 │   └── 04_SQL_Adatbazis_Modell_es_Seed_NIS2_AuditGuard.sql
 ├── docs/                             # Projekt-dokumentáció (Markdown + beadandó .docx fájlok)
-│   ├── CONTEXT.md, DECISIONS.md, TRACKING.md, HLD.md
+│   ├── CONTEXT.md, DECISIONS.md, TRACKING.md, HLD.md, AI_EVALUATION_REPORT.md, DEMO_SCRIPT.md
 │   ├── 01_PAD_Projekt_Alapito_Dokumentum_NIS2_AuditGuard_FULABV.docx
 │   ├── 02_Specifikacio_HLD_BPMN_es_WebBiztonsag_NIS2_AuditGuard_FULABV.docx
 │   └── 03_AI_Modell_es_Felhasznaloi_Dokumentacio_NIS2_AuditGuard_FULABV.docx
+├── start-demo.ps1                    # Egykattintásos kétzónás demó + Ollama indító szkript
 └── archive/                          # Korábbi statikus HTML prototípusok és kezdeti kódvázlatok
 ```
 
@@ -61,15 +62,18 @@ Nis2AuditGuard.sln
 
 ## 🚀 4. Telepítés és Futtatás (.NET 10 LTS)
 
-1. **Adatbázis:** MS SQL Server LocalDB megléte esetén az alkalmazás automatikusan létrehozza és seedeli a `Nis2AuditGuardDb` adatbázist (vagy futtatható a `database/04_SQL_Adatbazis_Modell_es_Seed_NIS2_AuditGuard.sql` script). LocalDB hiányában a rendszer SQLite adatbázisra vált.
-2. **AI-kulcs beállítása (User Secrets – soha nem kerül Gitbe):**
+1. **Egykattintásos Élő Demó Indítás (`PublicWeb:5070` + `ManagerWeb:127.0.0.1:5080` + Lokális Ollama ellenőrzés):**
+   ```powershell
+   .\start-demo.ps1
+   ```
+2. **Adatbázis:** MS SQL Server LocalDB megléte esetén az alkalmazás automatikusan létrehozza és seedeli a `Nis2AuditGuardDb` adatbázist (vagy futtatható a `database/04_SQL_Adatbazis_Modell_es_Seed_NIS2_AuditGuard.sql` script). LocalDB hiányában a rendszer automatikusan SQLite adatbázisra vált.
+3. **AI-kulcs beállítása (User Secrets – soha nem kerül Gitbe; ADR-09 szerint ingyenes kulcsnál csak szintetikus adat megy online):**
    ```powershell
    dotnet user-secrets set "AI:GeminiApiKey" "<SAJÁT_GEMINI_API_KULCS>" --project src/Nis2AuditGuard.ManagerWeb
    ```
-3. **Fordítás, tesztelés és indítás:**
+4. **Fordítás, automata xUnit tesztelés (12/12) és Golden-Set AI Benchmark:**
    ```powershell
    dotnet build Nis2AuditGuard.sln -warnaserror
-   dotnet test tests/Nis2AuditGuard.Tests
-   dotnet run --project src/Nis2AuditGuard.PublicWeb
-   dotnet run --project src/Nis2AuditGuard.ManagerWeb
+   dotnet test Nis2AuditGuard.sln
+   dotnet run --project tests/Nis2AuditGuard.Eval -- eval docs/AI_EVALUATION_REPORT.md
    ```

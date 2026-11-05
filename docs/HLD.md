@@ -1,7 +1,7 @@
 # High-Level Design (HLD) és Rendszerarchitektúra – NIS2-AuditGuard
 
 * **Készítette:** Károlyi Béla (Neptun-kód: `FULABV`)
-* **Verzió:** 2.0 (2026. november 4. – Szinkronizálva az ADR-01..13 döntésekkel)
+* **Verzió:** 2.1 (2026. november 5. – Szinkronizálva az ADR-01..14 döntésekkel és a Golden-Set AI benchmarkkal)
 
 ---
 
@@ -107,4 +107,16 @@ sequenceDiagram
    A C# szolgáltatás reguláris kifejezésekkel és cégnév-variáns szótárral standardizált, sorszámozott tokenekre cseréli az érzékeny adatokat: `[ÜGYFÉL_SZERVEZET]`, `[ANONIM_SZEMELY_1]`, `[ANONIM_EMAIL_1]`, `[BELSŐ_IP_CÍM_1]`, `[ANONIM_TELEFON_1]`, `[ANONIM_ADOSZAM_1]`, `[ANONIM_CEGJEGYZEKSZAM_1]`, `[ANONIM_BANKSZAMLA_1]`, `[BELSŐ_HOSZTNÉV_1]`. A token-térkép kizárólag a helyi memóriában marad.
 2. **`HallucinationValidatorService` (Idézet- és Forrás-validáció):**
    Nem bizonytalan Levenshtein-távolságot használ, hanem whitespace- és idézőjel-normalizált **szó szerinti részsztring-keresést** (`IndexedDocument.FindExact`) végez az oldalanként indexelt dokumentumon, beleértve az oldalhatáron átnyúló idézeteket is. Ellenőrzi továbbá, hogy a találat oldalszáma egyezik-e az AI által megjelölt oldallal. Ha az idézet nem található, a kártya `IdezetValidacioOk = false` értéket és `⚠️ HALLUCINÁCIÓ-GYANÚ` figyelmeztetést kap, miközben a státusz `TERVEZET – SZAKÉRTŐI FELÜLVIZSGÁLAT SZÜKSÉGES` marad.
+
+---
+
+## 5. Golden-Set AI-Eredményességmérés és Minőségbiztosítási Eredmények (`2026.11.05.`)
+
+* **Automata Egység- és Integrációs Tesztek (`Nis2AuditGuard.Tests`):** `12/12 Passed`, `0 Warning(s)`, `0 Error(s)` (`TreatWarningsAsErrors=true` mellett).
+* **Golden-Set AI Benchmark (`docs/AI_EVALUATION_REPORT.md` – `Nis2AuditGuard.Eval eval`):**
+  * **Környezet:** AMD Ryzen 7 7735HS APU (32 GB DDR5 RAM), `.NET 10.0 LTS`, lokális Ollama (`qwen2.5:7b-instruct-q4_K_M`, `num_ctx=4096`, `num_predict=450`, GBNF JSON Schema).
+  * **Idézet-hitelesség (VMI Citation Accuracy):** **100.0% (`5/5` valós teszteset)** – beleértve az Indirect Prompt Injection támadási kísérlet (`GS-05`) hatástalanítását is.
+  * **Hallucinált idézet kiszűrési arány (`GS-06`):** **100.0% (`1/1`)** – a szándékosan injektált hamis idézetet a `HallucinationValidatorService` azonnal megfogta (`IdezetValidacioOk = false`).
+  * **PII és Cégnév szivárgásmentesség (Zero-Leakage):** **100.0% (`0` szivárgás)**.
+
 

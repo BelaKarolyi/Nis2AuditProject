@@ -1,6 +1,6 @@
 # PROJECT CONTEXT: NIS2-AuditGuard
 
-* **Utolsó frissítés:** 2026. november 4.
+* **Utolsó frissítés:** 2026. november 5.
 * **Projektvezető / Fejlesztő:** Károlyi Béla (Neptun-kód: `FULABV`) – Egyszemélyes projekt-team
 * **Intézmény és Kurzus:** Milton Friedman Egyetem – *Szoftverfejlesztési projekt* (Oktató: Dr. Bárkányi Pál PhD docens)
 * **Végső beadási és prezentációs határidő:** 2026. december 11. (Konzultáció: 2026. november 20.)
@@ -24,14 +24,14 @@ A **NIS2-AuditGuard** egy mesterséges intelligenciával támogatott, kétzóná
   3. Dokumentumelemző AI, dokumentumok közötti eltéréskeresés és hiányosságfelismerés (*Gap Analysis*).
   4. Auditkérdés-generálás és 3-szintű (Ügyvezető / IT vezető / Auditor) vezetői összefoglaló exportálása (Word `.docx` / Excel `.xlsx`).
 
-## 2. Technológiai Stack és Eszközkörnyezet (2026.11.04. állapot)
+## 2. Technológiai Stack és Eszközkörnyezet (2026.11.05. állapot)
 * **Kódfejlesztési környezet (IDE / Agent):** Google Antigravity + Visual Studio (a C# .NET 10 backend, az SQL integráció, a tesztek és a frontend-backend összekötés iteratív fejlesztéséhez).
 * **UI/UX Design környezet:** Bootstrap 5 + Stitch (a publikus Landing Page és a zárt Menedzseri/Auditori Dashboard vizuális finomhangolásához).
 * **Architektúra és Dokumentáció:** GitHub-on verziókövetett Markdown (`docs/*.md`) és szinkronizált Word (`.docx`) dokumentumok.
 * **Backend & Adatbázis:** C# ASP.NET Core (`.NET 10.0 LTS`), Entity Framework Core, helyi **MS SQL Server LocalDB** (fejlesztői/teszt fallbackként SQLite támogatással – 100% belföldi/lokális adattárolás).
-* **AI Orchestration („B” architektúra – C# Dual-Engine Smart Failover, ADR-09 & ADR-10):**
-  * **Primary Engine (Online – Szintetikus/Demó vagy Paid Tier):** Google AI Studio (`gemini-3.8-flash`, konfigurálhatóan `gemini-4-argon`) a `/v1beta/interactions` végponton, kényszerített JSON sémával (`response_format`), előtte lokális C# `PiiAnonymizerService` maszkoló pajzzsal. Ingyenes API-kulcs esetén csak szintetikus demó-dokumentumok küldhetők online.
-  * **Fallback / Offline Engine (Valós ügyféladat & Magas EIR):** Lokális **Ollama** (`qwen2.5:7b-instruct-q4_K_M` vagy ekvivalens kvantált helyi LLM) áramszünet, internetkiesés (5 mp timeout), ingyenes kulcs melletti valós ügyféladat vagy „Magas” biztonsági osztályú EIR auditja esetére.
+* **AI Orchestration („B” architektúra – C# Dual-Engine Smart Failover, ADR-09, ADR-10 & ADR-14):**
+  * **Primary Engine (Online – Szintetikus/Demó vagy Paid Tier):** Google AI Studio (`gemini-3.8-flash`) a `/v1beta/interactions` végponton, kényszerített JSON sémával (`response_format`), előtte lokális C# `PiiAnonymizerService` maszkoló pajzzsal. Ingyenes API-kulcs esetén csak szintetikus demó-dokumentumok küldhetők online.
+  * **Fallback / Offline Engine (Valós ügyféladat & Magas EIR):** Lokális **Ollama** (`qwen2.5:7b-instruct-q4_K_M`, APU-ra optimalizált `num_ctx=4096`, `num_predict=450` és GBNF JSON Schema kényszerítéssel) áramszünet, internetkiesés (5 mp timeout), ingyenes kulcs melletti valós ügyféladat vagy „Magas” biztonsági osztályú EIR auditja esetére.
   * **Opcionális értesítési csatorna:** **OpenClaw Gateway → Discord** (kizárólag anonim metaadat: megállapítások száma, státusz; ügyféladat és idézet soha nem hagyja el a gépet).
 
 ## 3. Kiberbiztonsági, Adatvédelmi és Mentési Keretrendszer
@@ -53,9 +53,10 @@ A **NIS2-AuditGuard** egy mesterséges intelligenciával támogatott, kétzóná
   * `tests/Nis2AuditGuard.Eval/` – AI-eredményességmérő (golden-set) és PDF/DOCX szövegkinyerő segédeszköz.
 * `database/04_SQL_Adatbazis_Modell_es_Seed_NIS2_AuditGuard.sql` – Relációs T-SQL adatbázis modell és NIS2 törvényi seed adatok.
 * `docs/` – Beadandó dokumentumok és élő projekt-nyilvántartás:
-  * `DECISIONS.md`, `CONTEXT.md`, `TRACKING.md`, `HLD.md` (verziókövetett Markdown források).
+  * `DECISIONS.md`, `CONTEXT.md`, `TRACKING.md`, `HLD.md`, `AI_EVALUATION_REPORT.md`, `DEMO_SCRIPT.md` (verziókövetett Markdown források).
   * `01_PAD_Projekt_Alapito_Dokumentum_NIS2_AuditGuard_FULABV.docx` / `PAD_NIS2_AuditGuard.docx` – Projekt Alapító Dokumentum (15%).
   * `02_Specifikacio_HLD_BPMN_es_WebBiztonsag_NIS2_AuditGuard_FULABV.docx` / `HLD_NIS2_AuditGuard.docx` – Specifikáció, Alternatívák, HLD, BPMN 2.0 (20%).
   * `03_AI_Modell_es_Felhasznaloi_Dokumentacio_NIS2_AuditGuard_FULABV.docx` / `Dokumentacio_Fejlesztoi_Felhasznaloi_AI_NIS2.docx` – Fejlesztői, Felhasználói és AI-modell dokumentáció (20%).
+* `start-demo.ps1` – Egykattintásos demóindító (Ollama ellenőrzés, build, `PublicWeb:5070` és `ManagerWeb:127.0.0.1:5080` indítása).
 * `archive/` – Korábbi statikus HTML prototípusok (`archive/prototypes/`) és kezdeti egyfájlos kódvázlatok (`archive/legacy/`).
 

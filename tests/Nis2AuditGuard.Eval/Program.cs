@@ -72,11 +72,22 @@ static void SyncDocxFiles(string docsDir)
         ("Auditor Belépés (🔒)", "Zárt Menedzseri Zóna: csak 127.0.0.1 (🔒)"),
         ("(Hitelesített belépés után)", "(Kizárólag 127.0.0.1 Loopback / VPN zónában)"),
 
-        // 4. OpenClaw / Ollama szerepének pontosítása ("B" architektúra, ADR-10)
+        // 4. OpenClaw / Ollama szerepének pontosítása ("B" architektúra, ADR-10..14) és 2026.11.05. szinkron
         ("lokális OpenClaw / Ollama modell", "lokális Ollama modell + opcionális OpenClaw értesítő"),
         ("OpenClaw AI-Gateway + Ollama", "lokális Ollama (és opcionális OpenClaw Discord-értesítő)"),
         ("OpenClaw Gateway + Lokális Ollama", "Lokális Ollama + opcionális OpenClaw értesítő"),
-        ("Változat: 1.2 (Véglegesített alapverzió)", "Változat: 1.3 (Szinkronizálva az ADR-08..13 döntésekkel – 2026.11.04.)")
+        ("Változat: 1.0", "Változat: 1.4 (Teljes .NET 10 + Ollama qwen2.5:7b integráció és Golden-Set AI mérés – 2026.11.05.)"),
+        ("Google Gemini Pro / OpenClaw", "Google Gemini (gemini-3.8-flash) + Lokális Ollama (qwen2.5:7b-instruct-q4_K_M) + OpenClaw"),
+        ("Változat: 1.2 (Véglegesített alapverzió)", "Változat: 1.4 (Teljes .NET 10 + Ollama qwen2.5:7b integráció és Golden-Set AI mérés – 2026.11.05.)"),
+        ("Változat: 1.3 (Szinkronizálva az ADR-08..13 döntésekkel – 2026.11.04.)", "Változat: 1.4 (Teljes .NET 10 + Ollama qwen2.5:7b integráció és Golden-Set AI mérés – 2026.11.05.)"),
+        ("(HTML/DOCX/TSV)", "(HTML/DOCX/XLSX)"),
+        ("(DOCX/HTML)", "(DOCX/XLSX)"),
+        ("MS Word (.doc) vagy Excel (.tsv) formátumba", "valódi OpenXML MS Word (.docx) vagy ClosedXML Excel (.xlsx) formátumba"),
+        ("<dokumentum_szoveg>...</dokumentum_szoveg>", "<anonimizalt_dokumentum>...</anonimizalt_dokumentum>"),
+        ("[EloszuroKalkulatorService]", "[PreScreeningService]"),
+        ("2026. október 28. (v2.0 – Zárt Offline Menedzseri Architektúra + 3-2-1 DRP Mentés)", "2026. november 5. (v2.1 – .NET 10 LTS + Lokális Ollama qwen2.5:7b + Golden-Set AI Benchmark + 3-2-1 DRP Mentés)"),
+        ("SQL LocalDB létrehozása NIS2 törvényi seed adatokkal, C# PII-anonimizáló, Rate Limiting és Honeypot védelem.", "[TELJESÍTVE 2026.11.05.] SQL/SQLite DbContext 12 törvényi hellyel és 11 NIS2 követelménnyel, C# PiiAnonymizerService, Rate Limiting, Honeypot és 3 mp Time-Trap védelem."),
+        ("Előszűrő modul, Dokumentumelemző Gap-analízis, Idézet-validátor, Auditor Dashboard és Export funkció.", "[TELJESÍTVE 2026.11.05.] PublicWeb (5070) + ManagerWeb (127.0.0.1:5080), DualEngineAiOrchestrator (Ollama qwen2.5:7b 4K APU + Gemini 3.8 Flash), HallucinationValidatorService, DOCX/XLSX export és 12/12 xUnit + 6/6 Golden-Set teszt.")
     ];
 
     foreach (var file in Directory.GetFiles(docsDir, "*.docx", SearchOption.TopDirectoryOnly))
@@ -105,14 +116,33 @@ static void SyncDocxFiles(string docsDir)
             }
         }
 
-        // A fő PAD dokumentum verziótörténeti táblázatának kiegészítése az 1.3-as sorral (ha még nincs benne).
-        if (Path.GetFileName(file).StartsWith("01_PAD_", StringComparison.OrdinalIgnoreCase))
+        // A PAD dokumentumok verziótörténeti táblázatának kiegészítése az 1.3 és 1.4 sorokkal (ha még nincs benne).
+        var fileName = Path.GetFileName(file);
+        if (fileName.Contains("PAD", StringComparison.OrdinalIgnoreCase))
         {
-            if (AppendPadVersionRowIfMissing(body)) changedParagraphs++;
+            if (AppendPadVersionRowIfMissing(body, "1.3", "2026.11.04.",
+                "ADR-08..13 átvezetése: .NET 10 LTS solution, gemini-3.8-flash (ingyenes kulcsnál csak szintetikus adat), C# Dual-Engine + lokális Ollama + opcionális OpenClaw értesítő, kétzónás projekt-szétválasztás."))
+            {
+                changedParagraphs++;
+            }
+
+            if (AppendPadVersionRowIfMissing(body, "1.4", "2026.11.05.",
+                "ADR-14 és teljes rendszerintegráció: lokális Ollama (qwen2.5:7b-instruct-q4_K_M, 4K APU-optimalizáció) + OpenClaw telepítés, ManagerWeb/PublicWeb bekötés, 12/12 xUnit teszt és 6-esetes Golden-Set AI benchmark (100% idézet-hitelesség, 100% hallucináció-szűrés)."))
+            {
+                changedParagraphs++;
+            }
+        }
+
+        // Az AI-Modell és Felhasználói dokumentációk kiegészítése a 2026.11.05-i Golden-Set AI Benchmark eredménnyel.
+        if (fileName.StartsWith("03_AI_Modell", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("Dokumentacio_Fejlesztoi", StringComparison.OrdinalIgnoreCase))
+        {
+            if (AppendGoldenSetSummaryIfMissing(body))
+                changedParagraphs++;
         }
 
         wordDoc.MainDocumentPart!.Document!.Save();
-        Console.WriteLine($"{Path.GetFileName(file)}: {changedParagraphs} bekezdés/táblázatsor frissítve.");
+        Console.WriteLine($"{fileName}: {changedParagraphs} bekezdés/táblázatsor frissítve.");
     }
 }
 
@@ -128,10 +158,10 @@ static void RewriteParagraphPreservingFirstRunStyle(Paragraph para, string newTe
     para.Append(newRun);
 }
 
-static bool AppendPadVersionRowIfMissing(Body body)
+static bool AppendPadVersionRowIfMissing(Body body, string version, string date, string activity)
 {
     var table = body.Descendants<Table>().FirstOrDefault(t => t.InnerText.Contains("Tevékenység") && t.InnerText.Contains("1.2"));
-    if (table is null || table.InnerText.Contains("2026.11.04.")) return false;
+    if (table is null || table.InnerText.Contains(date, StringComparison.Ordinal)) return false;
 
     var templateRow = table.Elements<TableRow>().LastOrDefault();
     if (templateRow is null) return false;
@@ -140,10 +170,10 @@ static bool AppendPadVersionRowIfMissing(Body body)
     var cells = newRow.Elements<TableCell>().ToList();
     string[] values =
     [
-        "1.3",
-        "2026.11.04.",
+        version,
+        date,
         "Károlyi Béla (FULABV)",
-        "ADR-08..13 átvezetése: .NET 10 LTS solution, gemini-3.8-flash (ingyenes kulcsnál csak szintetikus adat), C# Dual-Engine + lokális Ollama + opcionális OpenClaw értesítő, kétzónás projekt-szétválasztás."
+        activity
     ];
     for (var i = 0; i < Math.Min(cells.Count, values.Length); i++)
     {
@@ -151,6 +181,35 @@ static bool AppendPadVersionRowIfMissing(Body body)
         RewriteParagraphPreservingFirstRunStyle(p, values[i]);
     }
     table.Append(newRow);
+    return true;
+}
+
+static bool AppendGoldenSetSummaryIfMissing(Body body)
+{
+    if (body.InnerText.Contains("Golden-Set AI-Eredményességmérés (2026.11.05.)", StringComparison.Ordinal))
+        return false;
+
+    string[] lines =
+    [
+        "III. RÉSZ: GOLDEN-SET AI-EREDMÉNYESSÉGMÉRÉS ÉS INDÍTÁSI ÚTMUTATÓ (2026.11.05.)",
+        "1. Golden-Set AI-Eredményességmérés (2026.11.05.) – Valós Lokális Ollama Benchmark:",
+        "A rendszer minőségét 6 szintetikus NIS2 tesztesetből (GS-01..GS-06: hiányzó VPN MFA, elavult 2022-es AD felülvizsgálat, hiányzó éves DRP visszaállítási próba, adatosztályozás nélküli publikus felhő, Indirect Prompt Injection támadás és szándékosan hallucinált idézet) álló Golden-Set méréssel igazoltuk AMD Ryzen 7 7735HS APU (32 GB RAM) + lokális Ollama (qwen2.5:7b-instruct-q4_K_M, num_ctx=4096, GBNF JSON Schema) környezetben:",
+        "• Idézet-hitelesség (VMI Citation Accuracy): 100,0% (5/5 valós tesztesetben szó szerint igazolt idézet, beleértve a GS-05 Prompt Injection csapda hatástalanítását).",
+        "• Hallucinált idézet kiszűrési arány (C# HallucinationValidatorService): 100,0% (1/1 – a GS-06 tesztesetben injektált hamis idézetet a C# validátor azonnal megfogta és IdezetValidacioOk = false jelzéssel látta el).",
+        "• PII és Cégnév szivárgásmentesség (PiiAnonymizerService): 100,0% (0 szivárgás).",
+        "• Jogszabályhely (§) determinisztikus SQL egyezés: 100,0% (6/6).",
+        "• Automata xUnit egység- és integrációs tesztcsomag (Nis2AuditGuard.Tests): 12/12 sikeres teszt (0 figyelmeztetés, 0 hiba).",
+        "2. Egykattintásos Indítás és Tesztelés (.NET 10.0 LTS):",
+        "• Kétzónás élő demó indítása (PublicWeb: http://localhost:5070 + ManagerWeb: http://127.0.0.1:5080): .\\start-demo.ps1",
+        "• Automata tesztek és Golden-Set AI mérés futtatása: dotnet test Nis2AuditGuard.sln | dotnet run --project tests/Nis2AuditGuard.Eval -- eval docs/AI_EVALUATION_REPORT.md"
+    ];
+
+    foreach (var line in lines)
+    {
+        var p = new Paragraph(new Run(new Text(line) { Space = DocumentFormat.OpenXml.SpaceProcessingModeValues.Preserve }));
+        body.Append(p);
+    }
+
     return true;
 }
 
