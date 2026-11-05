@@ -42,8 +42,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExportService, ExportService>();
         services.AddSingleton<IBackupService, BackupService>();
 
-        services.AddHttpClient<GeminiAiEngine>();
-        services.AddHttpClient<OllamaAiEngine>();
+        services.AddHttpClient<GeminiAiEngine>(c => c.Timeout = TimeSpan.FromSeconds(15));
+        services.AddHttpClient<OllamaAiEngine>(c => c.Timeout = TimeSpan.FromSeconds(200));
         services.AddTransient<IAiEngine>(sp => sp.GetRequiredService<GeminiAiEngine>());
         services.AddTransient<IAiEngine>(sp => sp.GetRequiredService<OllamaAiEngine>());
         services.AddScoped<DualEngineAiOrchestrator>();
@@ -53,3 +53,4 @@ public static class ServiceCollectionExtensions
         return services;
     }
 }
+

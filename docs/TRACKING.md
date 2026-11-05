@@ -1,8 +1,8 @@
 # PROJECT TRACKING & STATUS LOG: NIS2-AuditGuard
 
-* **Utolsó frissítés:** 2026. november 4.
+* **Utolsó frissítés:** 2026. november 5.
 * **Projektvezető:** Károlyi Béla (Neptun-kód: `FULABV`)
-* **Aktuális fázis:** `.NET 10` Solution és `Core` réteg felépítése + Dokumentáció szinkronizálása (ADR-08–13) → Backend szolgáltatások és Web-zónák bekötése a nov. 20-i konzultációra.
+* **Aktuális fázis:** Teljes `.NET 10.0 LTS` alkalmazás, kétzónás Web-architektúra, lokális Ollama (`qwen2.5:7b-instruct-q4_K_M`) + OpenClaw integráció, 12/12 automata xUnit teszt és 6-esetes Golden-Set AI-eredményességmérés (`docs/AI_EVALUATION_REPORT.md`) KÉSZ → Felkészülés a nov. 20-i konzultációra és a dec. 11-i védésre.
 
 ## 1. Tantárgyi Követelmények Teljesülési Mátrixa (Cél: 100% / Jeles)
 
@@ -10,8 +10,8 @@
 |---|---|---|---|
 | **1. Projekt Alapító Dokumentum (PAD)**<br>Sablon kitöltése (10%) + Folyamatos karbantartás (5%) | **15%** | ✅ KÉSZ (v1.3-ra frissítve, folyamatosan naplózva) | `docs/01_PAD_Projekt_Alapito_Dokumentum_NIS2_AuditGuard_FULABV.docx`, `docs/PAD_NIS2_AuditGuard.docx`, `docs/DECISIONS.md`, `docs/TRACKING.md` |
 | **2. Feladat Specifikáció**<br>Megoldási alternatívák (5%), Folyamatábrák/BPMN (5%), Adatbázis és struktúrák (10%) | **20%** | ✅ KÉSZ (v1.3 szinkronizálva a .NET 10 / „B” architektúrával) | `docs/02_Specifikacio_HLD_BPMN_es_WebBiztonsag_NIS2_AuditGuard_FULABV.docx`, `docs/HLD_NIS2_AuditGuard.docx`, `docs/HLD.md`, `database/04_SQL_Adatbazis_Modell_es_Seed_NIS2_AuditGuard.sql` |
-| **3. Feladat Megoldás és Prototípus**<br>Program elkészítése (25%), Kód tisztasága (5%), Kommentek (5%), Futtatható verzió hibátlansága (10%) | **45%** | 🔄 FOLYAMATBAN (`.NET 10` Solution, EF Core DbContext, PDF/DOCX extractor és PII-anonimizáló kész, 0 warninggal fordul) | `Nis2AuditGuard.sln`, `src/Nis2AuditGuard.Core/`, `src/Nis2AuditGuard.PublicWeb/`, `src/Nis2AuditGuard.ManagerWeb/`, `tests/` |
-| **4. Dokumentációk**<br>Felhasználói (10%), Fejlesztői (10%) + Kötelező AI-modell dokumentáció | **20%** | ✅ ALAPVERZIÓ FRISSÍTVE (Végleges képernyőképekkel és golden-set mérési táblázattal bővítendő) | `docs/03_AI_Modell_es_Felhasznaloi_Dokumentacio_NIS2_AuditGuard_FULABV.docx`, `docs/Dokumentacio_Fejlesztoi_Felhasznaloi_AI_NIS2.docx` |
+| **3. Feladat Megoldás és Prototípus**<br>Program elkészítése (25%), Kód tisztasága (5%), Kommentek (5%), Futtatható verzió hibátlansága (10%) | **45%** | ✅ KÉSZ (`.NET 10` Solution, `Core`, `PublicWeb`, `ManagerWeb`, 12/12 zöld xUnit teszt, 0 warning, `start-demo.ps1`) | `Nis2AuditGuard.sln`, `src/Nis2AuditGuard.Core/`, `src/Nis2AuditGuard.PublicWeb/`, `src/Nis2AuditGuard.ManagerWeb/`, `tests/`, `start-demo.ps1` |
+| **4. Dokumentációk**<br>Felhasználói (10%), Fejlesztői (10%) + Kötelező AI-modell dokumentáció | **20%** | ✅ KÉSZ (Golden-Set KPI jelentéssel és élő demó forgatókönyvvel kiegészítve) | `docs/03_AI_Modell_es_Felhasznaloi_Dokumentacio_NIS2_AuditGuard_FULABV.docx`, `docs/AI_EVALUATION_REPORT.md`, `docs/DEMO_SCRIPT.md` |
 
 ## 2. Elvégzett Feladatok Naplója (Completed Milestones)
 * **[2026.10.08 – 2026.10.15.] Koncepció és 1. Feladat (Ügyféltalálkozó):** Meghatározva az első ügyféltalálkozó kérdéssora, a bekérendő NIS2 dokumentumok (IBSZ, BCP/DRP, AD-listák, mentési jegyzőkönyvek) és az interjúalanyok (Ügyvezető, IBF, IT vezető, HR/Beszerzés).
@@ -26,6 +26,11 @@
 * **[2026.11.04.] Architekturális döntések véglegesítése (ADR-08–13) és Dokumentáció-szinkron:**
   * Rögzítve a „B” architektúra (C# Dual-Engine Orchestrator: `gemini-3.8-flash` + közvetlen lokális Ollama + opcionális OpenClaw Discord-értesítő) és az ingyenes Gemini API-kulcsra vonatkozó adatvédelmi szabály (online csak szintetikus demó-adat, valós adat csak Ollamán).
   * A HLD, PAD, Specifikáció és AI/Fejlesztői dokumentumok szinkronizálása (Markdown + `.docx`).
+* **[2026.11.05.] Teljes Backend/UI Integráció, Lokális Ollama + OpenClaw Telepítés és Golden-Set AI Benchmark:**
+  * Telepítve és összekapcsolva a helyi **Ollama** (`qwen2.5:7b-instruct-q4_K_M`) és az **OpenClaw** (MS Store).
+  * Mély-integrálva a `PublicWeb` (`localhost:5070`) és a `ManagerWeb` (`127.0.0.1:5080`) felhasználói felülete a `.NET 10` Minimal API végpontokkal (`PiiAnonymizerService`, `DualEngineAiOrchestrator`, `HallucinationValidatorService`, `ExportService`, `BackupService`).
+  * Lefuttatva a 12 egység- és integrációs teszt (`12/12 Passed, 0 Warning, 0 Error`), valamint a 6-esetes Golden-Set AI-eredményességmérés (`docs/AI_EVALUATION_REPORT.md`: 100% idézet-hitelesség, 100% hallucináció-kiszűrés, 0% PII-szivárgás).
+  * Elkészült a `start-demo.ps1` egykattintásos demóindító és a `docs/DEMO_SCRIPT.md` 10 perces konzultációs forgatókönyv.
 
 ## 3. Következő Lépések és Teendők (Next Actions / Backlog)
 

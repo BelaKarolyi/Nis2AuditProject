@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using Nis2AuditGuard.Core.Domain;
 using Nis2AuditGuard.Core.Options;
@@ -33,6 +34,12 @@ public interface IAiEngine
 /// </summary>
 public sealed class GeminiAiEngine(HttpClient httpClient, IOptions<AiOptions> options) : IAiEngine
 {
+    internal static readonly JsonSerializerOptions TolerantJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
+    };
+
     private readonly AiOptions _options = options.Value;
 
     /// <inheritdoc />
@@ -74,7 +81,7 @@ public sealed class GeminiAiEngine(HttpClient httpClient, IOptions<AiOptions> op
 
         var body = await resp.Content.ReadAsStringAsync(ct);
         var innerJson = ExtractInteractionText(body);
-        var result = JsonSerializer.Deserialize<WhiteBoxAiGapResult>(innerJson) ?? new WhiteBoxAiGapResult();
+        var result = JsonSerializer.Deserialize<WhiteBoxAiGapResult>(innerJson, TolerantJsonOptions) ?? new WhiteBoxAiGapResult();
         return new AiEngineResponse(result, innerJson, _options.GeminiModel);
     }
 
@@ -113,7 +120,7 @@ public sealed class GeminiAiEngine(HttpClient httpClient, IOptions<AiOptions> op
         return "{}";
     }
 
-    private static object BuildJsonSchema() => new
+    internal static object BuildJsonSchema() => new
     {
         type = "object",
         properties = new
@@ -165,9 +172,9 @@ public sealed class OllamaAiEngine(HttpClient httpClient, IOptions<AiOptions> op
             model = _options.OllamaModel,
             system = systemInstruction,
             prompt = userPrompt,
-            format = "json",
+            format = GeminiAiEngine.BuildJsonSchema(),
             stream = false,
-            options = new { temperature = 0.1, seed = _options.Seed }
+            options = new { temperature = 0.1, seed = _options.Seed, num_ctx = 4096, num_predict = 450 }
         };
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -183,7 +190,8 @@ public sealed class OllamaAiEngine(HttpClient httpClient, IOptions<AiOptions> op
             ? r.GetString() ?? "{}"
             : "{}";
 
-        var result = JsonSerializer.Deserialize<WhiteBoxAiGapResult>(innerJson) ?? new WhiteBoxAiGapResult();
+        var result = JsonSerializer.Deserialize<WhiteBoxAiGapResult>(innerJson, GeminiAiEngine.TolerantJsonOptions) ?? new WhiteBoxAiGapResult();
         return new AiEngineResponse(result, innerJson, _options.OllamaModel);
     }
 }
+

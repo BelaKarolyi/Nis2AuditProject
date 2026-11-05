@@ -248,3 +248,4 @@ public sealed class BackupService : IBackupService
         List<string> BizonyitekokHashes,
         string ErtekelesekJson);
 }
+

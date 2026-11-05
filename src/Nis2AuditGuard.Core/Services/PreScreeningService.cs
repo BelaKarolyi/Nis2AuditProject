@@ -93,3 +93,4 @@ public sealed class PreScreeningService : IPreScreeningService
             Statusz: "ELŐZETES TERVEZET – TANÁCSADÓI EGYEZTETÉS SZÜKSÉGES");
     }
 }
+

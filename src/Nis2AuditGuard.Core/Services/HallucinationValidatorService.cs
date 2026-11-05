@@ -108,3 +108,4 @@ public sealed partial class HallucinationValidatorService : IHallucinationValida
     [GeneratedRegex(@"\d+")]
     private static partial Regex NumberRegex();
 }
+

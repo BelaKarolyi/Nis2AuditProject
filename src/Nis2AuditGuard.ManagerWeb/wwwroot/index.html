@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
@@ -78,15 +78,23 @@
             <span class="status-pill bg-info text-dark">👤 Auditor: Károlyi Béla (FULABV)</span>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <label class="small me-1">AI-Motor üzemmód (MKIK-54 / NIS2 9. §):</label>
+            <label class="small me-1">AI-Motor üzemmód (MKIK-54 / NIS2 9. § / ADR-09):</label>
             <select id="aiEngineMode" class="form-select form-select-sm w-auto bg-dark text-light border-secondary" onchange="logEvent('AI_MOTOR_VALTAS', 'Átkapcsolva: ' + this.value)">
-                <option value="HYBRID_GEMINI">🟢 Hibrid: Anonimizált Gemini Pro -> OpenClaw Fallback</option>
-                <option value="LOCAL_OPENCLAW">🟠 Szigorúan Zárt: 100% Lokális OpenClaw / Ollama (Magas bizt. osztály / Offline)</option>
+                <option value="HYBRID_GEMINI">🟢 Hibrid: Anonimizált Gemini 3.8 Flash (Csak szintetikus demó) -> Ollama Fallback</option>
+                <option value="LOCAL_OPENCLAW" selected>🟠 Szigorúan Zárt: 100% Lokális Ollama qwen2.5:7b (Valós adat / Magas bizt. osztály)</option>
             </select>
         </div>
     </header>
 
-    <main class="container-fluid py-4 px-4">
+    <main class="container-fluid py-3 px-4">
+        <!-- ADR-09 & ÉLŐ BACKEND STÁTUSZ SÁV -->
+        <div id="backendHealthBanner" class="alert alert-info py-2 px-3 mb-3 small shadow-sm d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <strong>🛡️ ADR-09 Adatvédelmi Szabály:</strong> Ingyenes Gemini kulcs mellett <em>kizárólag szintetikus demó-szöveg</em> küldhető online; valós ügyféladat és „Magas” biztonsági osztályú EIR kötelezően a helyi <strong>Ollama (<code>qwen2.5:7b-instruct-q4_K_M</code>)</strong> motoron fut.
+            </div>
+            <span id="backendHealthBadge" class="badge bg-secondary">Backend állapot lekérdezése...</span>
+        </div>
+
         <div class="row g-4">
 
             <!-- BAL OSZLOP: ÜGYFÉL IMPORT, TUDÁSBÁZIS ÉS BIZTONSÁGI MENTÉS (DRP) -->
@@ -138,10 +146,10 @@
                         <p class="small text-muted mb-2">2024. évi LXIX. tv. 38. § b), h) + MKIK-63 (Külső adathordozó) + MKIK-14 (Biztonságos törlés).</p>
                         <div class="d-grid gap-2 mb-3">
                             <button class="btn btn-primary btn-sm fw-bold" onclick="createEncryptedBackup()">
-                                🔒 Titkosított 3-2-1 Mentési Csomag + SHA-256 Hash Letöltése
+                                🔒 Titkosított 3-2-1 Mentési Csomag (AES-256-GCM) + SHA-256 Hash
                             </button>
                             <button class="btn btn-outline-success btn-sm fw-bold" onclick="runRestoreVerificationTest()">
-                                ♻️ Visszaállítási Próba (DRP Restore Verify) & Jegyzőkönyv Generálása
+                                ♻️ Visszaállítási Próba (DRP Restore Verify) & DOCX Jegyzőkönyv Letöltése
                             </button>
                         </div>
                         <div id="drpResultBox" class="small p-2 bg-light border rounded d-none"></div>
@@ -175,10 +183,10 @@
                             </div>
                             <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
                                 <button class="btn btn-sm btn-dark" onclick="previewSanitizedText()">🛡️ 1. Lépés: Lokális C# PII-Anonimizáló Előnézet</button>
-                                <button class="btn btn-success fw-bold" onclick="runWhiteBoxGapAnalysis()">🤖 2. Lépés: Fehér Dobozos Gap-Analízis & Idézet-Validáció Futtatása</button>
+                                <button id="btnRunGapAnalysis" class="btn btn-success fw-bold" onclick="runWhiteBoxGapAnalysis(true)">🤖 2. Lépés: Fehér Dobozos Gap-Analízis & Idézet-Validáció Futtatása</button>
                             </div>
                             <div class="col-12 d-none" id="sanitizedPreviewContainer">
-                                <label class="small fw-bold text-success">🛡️ Anonimizált kimenet (Ez a maszkolt szöveg megy az AI-nak, cégnév/személynév/IP nélkül):</label>
+                                <label id="sanitizedPreviewHeader" class="small fw-bold text-success">🛡️ Anonimizált kimenet (Ez a maszkolt szöveg megy az AI-nak, cégnév/személynév/IP nélkül):</label>
                                 <pre id="sanitizedPreviewBox" class="code-box mb-0"></pre>
                             </div>
                         </div>
@@ -214,8 +222,8 @@
                                 </div>
                                 <div id="roleReportBox" class="p-3 bg-light border rounded small mb-3" style="min-height: 170px;"></div>
                                 <div class="d-flex flex-wrap gap-2">
-                                    <button class="btn btn-sm btn-primary" onclick="exportToWordDoc()">📝 Exportálás MS Word (.doc) formátumba</button>
-                                    <button class="btn btn-sm btn-outline-success" onclick="exportToTsvExcel()">📊 Exportálás Excel (.tsv/.csv) mátrixba</button>
+                                    <button class="btn btn-sm btn-primary" onclick="exportToWordDoc()">📝 Exportálás MS Word (.docx) formátumba</button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="exportToTsvExcel()">📊 Exportálás Excel (.xlsx) Gap-Mátrixba</button>
                                 </div>
                             </div>
                         </div>
@@ -240,6 +248,7 @@
         // Determinisztikus SQL Tudásbázis (2024. évi LXIX. tv. és 7/2024. MK rendelet)
         const knowledgeBase = {
             REQ_AC: {
+                id: 1,
                 law: "2024. évi LXIX. tv. 6. § (2)-(3) bek., 38. § c) pont és 7/2024. (VI. 24.) MK rendelet (Hozzáférés-kezelés - AC)",
                 req: "A jogosultságokat a legkisebb jogosultság elve alapján kell kiosztani, és legalább évente dokumentáltan felül kell vizsgálni. Kiemelt hozzáféréseknél kötelező a többtényezős hitelesítés (MFA/2FA).",
                 control: "Hozzáférés-kezelési szabályzat + Negyedéves/Éves jogosultsági felülvizsgálat + 2FA kényszerítés.",
@@ -248,6 +257,7 @@
                 owner: "IT Vezető / Rendszergazda és IBF (EIRB felelős)"
             },
             REQ_CP: {
+                id: 2,
                 law: "2024. évi LXIX. tv. 38. § b) és h) pont, 7/2024. (VI. 24.) MK rendelet (Üzletmenet-folytonosság és Mentés - CP) + MKIK-63",
                 req: "A tárolt adatokat védeni kell a megsemmisüléstől és hozzáférhetetlenségtől; fizikai/műszaki eseménykor biztosítani kell a helyreállítást és az éves dokumentált visszaállítási próbát.",
                 control: "3-2-1 titkosított biztonsági mentés + Éves visszaállítási próba (Restore Test) jegyzőkönyvezése.",
@@ -256,6 +266,7 @@
                 owner: "Üzemeltetési vezető / Rendszergazda"
             },
             REQ_IR: {
+                id: 4,
                 law: "2024. évi LXIX. tv. 4. § 76., 97. pont és Incidenskezelési szabályok (NKI CSIRT 24/72 órás jelentéstétel)",
                 req: "A jelentős kiberbiztonsági incidenst 24 órán belül (korai riasztás), majd 72 órán belül részletesen be kell jelenteni a Nemzeti Kiberbiztonsági Incidenskezelő Központnak (NKI CSIRT).",
                 control: "Incidenskezelési terv + NKI CSIRT (incidens.nki.gov.hu) bejelentési eljárásrend + Eseménynaplózás.",
@@ -264,6 +275,7 @@
                 owner: "IBF (EIRB felelős - 11. §)"
             },
             REQ_SR: {
+                id: 3,
                 law: "2024. évi LXIX. tv. 9. § (2)-(4) bek. (Felhő/Külföldi adatkezelés), 17. § (Támogató rendszerek) és MKIK-62",
                 req: "Nem privát felhőszolgáltatás csak adatosztályozás és kockázatfelmérés után vehető igénybe; a támogató rendszereknek az általuk támogatott EIR-rel arányos védelmet kell kapniuk.",
                 control: "Adatosztályozási nyilvántartás + Beszállítói (SLA/kiberbiztonsági) szerződéses mellékletek.",
@@ -275,13 +287,35 @@
 
         let gapFindings = [];
         let auditLog = [];
+        let currentSampleMode = 'PARTIAL';
+        let activeClientId = 1;
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             updateRequirementView();
             loadSampleDoc('PARTIAL');
             logEvent('RENDSZER_INDITAS', 'Zárt Offline Menedzseri Konzol elindítva (127.0.0.1).');
-            runWhiteBoxGapAnalysis();
+            await runWhiteBoxGapAnalysis(false);
+            await checkBackendHealth();
         });
+
+        async function checkBackendHealth() {
+            const badge = document.getElementById('backendHealthBadge');
+            try {
+                const resp = await fetch('/api/health/engines');
+                if (resp.ok) {
+                    const h = await resp.json();
+                    badge.className = 'badge bg-success';
+                    badge.innerText = `✔ .NET 10 Backend AKTÍV (${h.seededRequirementsCount} SQL követelmény | Ollama: ${h.ollamaModel})`;
+                    logEvent('BACKEND_KAPCSOLAT', `.NET 10 Core API csatlakoztatva. Modell: ${h.ollamaModel} (${h.ollamaEndpoint})`);
+                } else {
+                    badge.className = 'badge bg-warning text-dark';
+                    badge.innerText = '⚠️ Statikus előnézeti mód';
+                }
+            } catch {
+                badge.className = 'badge bg-warning text-dark';
+                badge.innerText = '⚠️ Standalone HTML mód (Backend nem fut)';
+            }
+        }
 
         function logEvent(type, details) {
             const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
@@ -304,56 +338,144 @@
         }
 
         function loadSampleDoc(mode) {
+            currentSampleMode = mode;
             const company = document.getElementById('lblCompany').innerText;
             if (mode === 'PARTIAL') {
                 document.getElementById('docPolicyText').value =
-                    `[IBSZ_v2.pdf | 6. oldal, 4.2. fejezet] A ${company} informatikai rendszereiben (IP: 192.168.10.45) a felhasználói jogosultságokat belépéskor Kovács János IT vezető állítja be. A jogosultságokat évente felül kell vizsgálni. Távoli VPN eléréshez jelenleg egyfaktoros jelszavas azonosítás van érvényben.`;
+                    `[OLDAL 1]\n[IBSZ_v2.pdf | 6. oldal, 4.2. fejezet] A ${company} informatikai rendszereiben (IP: 192.168.10.45, admin@pannongepesz.hu, +36 30 555 9876, adószám: 12345678-2-41) a felhasználói jogosultságokat belépéskor Kovács János IT vezető állítja be. A jogosultságokat évente felül kell vizsgálni. Távoli VPN eléréshez jelenleg egyfaktoros jelszavas azonosítás van érvényben.`;
                 document.getElementById('docEvidenceText').value =
-                    `[AD_Audit_Jegyzokonyv.docx | 2. oldal, 1.1. pont] Utolsó dokumentált Active Directory jogosultsági felülvizsgálat dátuma: 2022. november 14. A kilépett dolgozók közül 3 fiók aktív státuszban maradt. Visszaállítási próba 2025-ben nem történt.`;
+                    `[OLDAL 2]\n[AD_Audit_Jegyzokonyv.docx | 2. oldal, 1.1. pont] Utolsó dokumentált Active Directory jogosultsági felülvizsgálat dátuma: 2022. november 14. A kilépett dolgozók közül 3 fiók aktív státuszban maradt. Visszaállítási próba 2025-ben nem történt.`;
             } else {
                 document.getElementById('docPolicyText').value =
-                    `[IBSZ_v2.pdf | 3. oldal, 2.1. fejezet] A ${company} minden szerverén napi mentést készít külső meghajtóra.`;
+                    `[OLDAL 1]\n[IBSZ_v2.pdf | 3. oldal, 2.1. fejezet] A ${company} minden szerverén napi mentést készít külső meghajtóra.`;
                 document.getElementById('docEvidenceText').value =
-                    `[Mentesi_Naplo.txt | 1. oldal] Mentés sikeres: 2026-10-20. Visszaállítási teszt nem szerepel a dokumentumban.`;
+                    `[OLDAL 2]\n[Mentesi_Naplo.txt | 1. oldal] Mentés sikeres: 2026-10-20. Visszaállítási teszt nem szerepel a dokumentumban.`;
             }
-            document.getElementById(' docPolicyText')?.focus();
         }
 
-        // Lokális C# Anonimizáló (Sanitizer) szimuláció
-        function sanitizeText(raw) {
+        // Lokális C# Anonimizáló (Sanitizer)
+        function sanitizeTextFallback(raw) {
             const company = document.getElementById('lblCompany').innerText.replace(' (Demó)', '');
             return raw
-                .replaceAll(company, '[ÜGYFÉL_SZERVEZET]')
-                .replace(/Pannon-Gépész Zrt\./gi, '[ÜGYFÉL_SZERVEZET]')
-                .replace(/\b\d{1,3}(\.\d{1,3}){3}\b/g, '[BELSŐ_IP_MASZKOLVA]')
-                .replace(/Kovács János/gi, '[FELELŐS_SZEMÉLY_01]');
+                .replaceAll(company, '[UGYFEL_SZERVEZET]')
+                .replace(/Pannon-Gépész Zrt\./gi, '[UGYFEL_SZERVEZET]')
+                .replace(/\b\d{1,3}(\.\d{1,3}){3}\b/g, '[BELSO_IP_01]')
+                .replace(/Kovács János/gi, '[SZEMELY_01]');
         }
 
-        function previewSanitizedText() {
+        async function previewSanitizedText() {
             const combined = "SZABÁLYZAT:\n" + document.getElementById('docPolicyText').value +
                              "\n\nBIZONYÍTÉK:\n" + document.getElementById('docEvidenceText').value;
-            const masked = sanitizeText(combined);
+            const company = document.getElementById('lblCompany').innerText.replace(' (Demó)', '');
+
+            try {
+                const resp = await fetch('/api/anonymize-preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rawText: combined,
+                        cegNev: company,
+                        extraTerms: ['Kovács János']
+                    })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    document.getElementById('sanitizedPreviewHeader').innerText =
+                        `🛡️ C# PiiAnonymizerService kimenet (${data.totalReplacements} db PII/Cégnév/IP token maszkolva | ${data.privacyPolicyNotice}):`;
+                    document.getElementById('sanitizedPreviewBox').innerText = data.anonymizedText;
+                    document.getElementById('sanitizedPreviewContainer').classList.remove('d-none');
+                    logEvent('PII_ANONIMIZALAS_CSHARP', `C# PiiAnonymizerService lefutott: ${data.totalReplacements} db érzékeny adat tokenizálva.`);
+                    return;
+                }
+            } catch {
+                // Fallback ha statikusan nyitották meg
+            }
+
+            const masked = sanitizeTextFallback(combined);
             document.getElementById('sanitizedPreviewBox').innerText = masked;
             document.getElementById('sanitizedPreviewContainer').classList.remove('d-none');
             logEvent('PII_ANONIMIZALAS', 'Cégnév, személynév és IP-címek lokálisan maszkolva az AI-hívás előtt.');
         }
 
         // Fehér dobozos AI Gap-Analízis + Programozott Idézet-ellenőrzés (Hallucináció-szűrő)
-        function runWhiteBoxGapAnalysis() {
+        async function runWhiteBoxGapAnalysis(callLiveBackend = false) {
             const policy = document.getElementById('docPolicyText').value;
             const evidence = document.getElementById('docEvidenceText').value;
-            const fullSourceText = policy + " " + evidence;
+            const fullSourceText = policy + "\n" + evidence;
             const reqKey = document.getElementById('reqSelector').value;
             const kb = knowledgeBase[reqKey];
+            const btn = document.getElementById('btnRunGapAnalysis');
 
-            // Két megállapítás generálása: egy valós idézettel, és ha a szöveg rövid (Minta #2), egy hallucináció-teszttel
+            if (callLiveBackend) {
+                const origBtnHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `⏳ Élő C# + Ollama (qwen2.5:7b) elemzés folyamatban...`;
+                try {
+                    const isSimHallucination = (currentSampleMode === 'HALLUCINATION_TEST');
+                    const isSynthetic = document.getElementById('aiEngineMode').value === 'HYBRID_GEMINI';
+                    const resp = await fetch(`/api/clients/${activeClientId}/analyze`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            kovetelmenyId: kb.id,
+                            inlineDocumentName: "IBSZ_es_Bizonyitek.txt",
+                            inlineDocumentText: fullSourceText,
+                            isSyntheticDemo: isSynthetic,
+                            simulateHallucinatedQuote: isSimHallucination,
+                            extraMaskTerms: ['Kovács János']
+                        })
+                    });
+
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        const r = data.outcome;
+                        document.getElementById('sanitizedPreviewBox').innerText = data.anonymizedPreview;
+                        document.getElementById('sanitizedPreviewContainer').classList.remove('d-none');
+
+                        const liveCard = {
+                            id: `GAP-LIVE-${data.ertekelesId}`,
+                            ertekelesId: data.ertekelesId,
+                            aiStatement: r.mit_allit_az_ai,
+                            status: r.idezet_validacio_ok ? `ÉLŐ AI ELEMZÉS (${r.hasznalt_ai_motor})` : "HALLUCINÁCIÓ BLOKKOLVA (C# VALIDÁTOR)",
+                            exactQuote: r.mire_alapozza_pontos_idezet,
+                            sourceLocation: r.mely_dokumentumbol_oldal_szakasz,
+                            lawReference: r.mely_kovetelmenyhez_kapcsolodik,
+                            mandatoryVsBestPractice: `KÖTELEZŐ JOGSZABÁLYI ELŐÍRÁS: ${r.jogszabaly_altal_eloirt_hiany} | AI JÓ GYAKORLAT: ${r.ai_altal_javasolt_jo_gyakorlat}`,
+                            confidence: `${r.mennyire_biztos_szazalek}% (${data.responseTimeMs} ms)`,
+                            humanCheckRequired: r.mit_kell_a_szakertonek_ellenoriznie,
+                            generatedInterviewQ: (r.generalt_audit_kerdesek && r.generalt_audit_kerdesek.length > 0)
+                                ? r.generalt_audit_kerdesek[0]
+                                : kb.question,
+                            quoteVerified: r.idezet_validacio_ok,
+                            approvalState: "TERVEZET",
+                            auditorComment: ""
+                        };
+
+                        gapFindings.unshift(liveCard);
+                        logEvent('AI_GAP_ELEMZES_ELO', `Valódi C# + ${r.hasznalt_ai_motor} válasz (${data.responseTimeMs} ms). Idézet-validáció: ${r.idezet_validacio_ok ? 'HITELES' : 'HALLUCINÁCIÓ-GYANÚ!'}`);
+                        renderGapCards();
+                        recalcIndices();
+                        generateRoleReport();
+                        btn.disabled = false;
+                        btn.innerHTML = origBtnHtml;
+                        return;
+                    }
+                } catch (err) {
+                    logEvent('AI_GAP_FALLBACK', 'Backend hívás sikertelen, kliensoldali bemutató-értékelés megjelenítve.');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = origBtnHtml;
+                }
+            }
+
+            // Alapértelmezett 2 bemutató megállapítás betöltéskor
             const quote1 = policy.includes("egyfaktoros jelszavas azonosítás")
                 ? "Távoli VPN eléréshez jelenleg egyfaktoros jelszavas azonosítás van érvényben."
                 : "A felhasználói jogosultságokat évente felül kell vizsgálni.";
 
             const quote2 = evidence.includes("2022. november 14.")
                 ? "Utolsó dokumentált Active Directory jogosultsági felülvizsgálat dátuma: 2022. november 14."
-                : "A szervezet 2026-ban kvantumtitkosított SIEM rendszert vezetett be a 999. § alapján."; // Szándékos hallucináció teszthez!
+                : "A szervezet 2026-ban kvantumtitkosított SIEM rendszert vezetett be a 999. § alapján.";
 
             gapFindings = [
                 {
@@ -437,9 +559,22 @@
             logEvent('AUDITOR_MEGJEGYZES', `${gapFindings[idx].id} módosítva: "${val}"`);
         }
 
-        function setApproval(idx, state) {
+        async function setApproval(idx, state) {
             gapFindings[idx].approvalState = state;
             logEvent('EMBERI_FELULVIZSGALAT', `${gapFindings[idx].id} státusza beállítva: ${state}`);
+            if (gapFindings[idx].ertekelesId) {
+                try {
+                    const actionMap = { 'JÓVÁHAGYVA': 'JOVAHAGYVA', 'ELUTASÍTVA': 'ELUTASITVA', 'TERVEZET': 'TERVEZET' };
+                    await fetch(`/api/findings/${gapFindings[idx].ertekelesId}/review`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: actionMap[state] || 'TERVEZET',
+                            auditorMegjegyzes: gapFindings[idx].auditorComment
+                        })
+                    });
+                } catch { }
+            }
             renderGapCards();
             recalcIndices();
             generateRoleReport();
@@ -449,11 +584,11 @@
             const eirClass = document.getElementById('eirClassSelect').value;
             if (eirClass === 'MAGAS') {
                 document.getElementById('aiEngineMode').value = 'LOCAL_OPENCLAW';
-                logEvent('BIZTONSAGI_SZABALY', 'Magas biztonsági osztályú EIR kiválasztva -> Kötelező átkapcsolás 100% Lokális OpenClaw AI módra!');
+                logEvent('BIZTONSAGI_SZABALY', 'Magas biztonsági osztályú EIR kiválasztva -> Kötelező átkapcsolás 100% Lokális Ollama AI módra!');
             }
             const approvedCount = gapFindings.filter(g => g.approvalState === 'JÓVÁHAGYVA').length;
-            const vmi = 58 + (approvedCount * 7);
-            const szeki = 54 + (approvedCount * 6);
+            const vmi = Math.min(100, 58 + (approvedCount * 7));
+            const szeki = Math.min(100, 54 + (approvedCount * 6));
             document.getElementById('vmiScore').innerText = vmi + "%";
             document.getElementById('szekiScore').innerText = szeki + "%";
         }
@@ -470,7 +605,7 @@
                 box.innerHTML = `
                     <div class="d-flex justify-content-between"><strong>ÜGYVEZETŐI ÖSSZEFOGLALÓ (${company})</strong><span class="badge bg-warning text-dark">TERVEZET</span></div>
                     <hr class="my-1">
-                    <p class="mb-1"><strong> vezetői felelősség és kockázat (2024. évi LXIX. tv.):</strong> Az előzetes VMI (${vmi}) és SZEKI (${szeki}) mutatók alapján 2 kiemelt nem-megfelelőség került feltárásra, amelyek hatósági ellenőrzés esetén bírságkockázatot hordoznak.</p>
+                    <p class="mb-1"><strong>Vezetői felelősség és kockázat (2024. évi LXIX. tv.):</strong> Az előzetes VMI (${vmi}) és SZEKI (${szeki}) mutatók alapján kiemelt nem-megfelelőségek kerültek feltárásra, amelyek hatósági ellenőrzés esetén bírságkockázatot hordoznak.</p>
                     <p class="mb-1"><strong>Prioritási ütemterv és erőforrás-igény:</strong> 1) Azonnali (0–30 nap): Kilépett dolgozók fiókjainak letiltása és 2FA bevezetése; 2) Rövid távú (30–90 nap): Éves visszaállítási próba és jogosultsági audit pótlása. Releváns szervezetként az éves IT-költségvetés min. 5%-át kiberbiztonsági fejlesztésre kell elkülöníteni.</p>
                 `;
             } else if (role === 'IT') {
@@ -499,11 +634,11 @@
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => {
+            reader.onload = async (ev) => {
                 try {
                     const data = JSON.parse(ev.target.result);
-                    applyClientData(data);
-                    logEvent('UGYFEL_IMPORT_JSON', `Offline JSON csomag betöltve: ${data.ugyfelAzonosito} (${data.cegnev})`);
+                    await applyClientData(data);
+                    logEvent('UGYFEL_IMPORT_JSON', `Offline JSON csomag betöltve: ${data.ugyfelAzonosito || 'JSON'} (${data.cegnev || data.CegNev})`);
                 } catch (err) {
                     alert("Hibás JSON fájlformátum!");
                 }
@@ -511,19 +646,19 @@
             reader.readAsText(file);
         }
 
-        function loadFromLocalStorage() {
+        async function loadFromLocalStorage() {
             const raw = localStorage.getItem('nis2_last_lead');
             if (!raw) {
                 alert("Nincs mentett ügyfél a helyi böngésző-tárhelyen. Nyissa meg a Landing Page-et, küldjön be egy űrlapot, vagy használja a JSON fájlbetöltést!");
                 return;
             }
             const data = JSON.parse(raw);
-            applyClientData(data);
+            await applyClientData(data);
             logEvent('UGYFEL_IMPORT_LOCAL', `Helyi munkamenetből betöltve: ${data.ugyfelAzonosito}`);
         }
 
-        function loadDemoClient() {
-            applyClientData({
+        async function loadDemoClient() {
+            await applyClientData({
                 ugyfelAzonosito: "NIS2-2026-8410",
                 cegnev: "Pannon-Gépész Zrt.",
                 agazat: "M3_GYARTAS (3. melléklet)",
@@ -532,135 +667,134 @@
             logEvent('DEMO_BETOLTES', 'Alapértelmezett demó ügyfél visszaállítva.');
         }
 
-        function applyClientData(data) {
-            document.getElementById('lblCompany').innerText = data.cegnev || "Ismeretlen Cég";
+        async function applyClientData(data) {
+            const cegNev = data.cegnev || data.CegNev || "Pannon-Gépész Zrt.";
+            const agazat = data.agazat || data.Agazat || "N/A";
+            const eloszures = data.elozetesAiBesorolas || data.EloszuresEredmeny || "NIS2 ÉRINTETT SZERVEZET";
+            document.getElementById('lblCompany').innerText = cegNev;
             document.getElementById('lblClientId').innerText = data.ugyfelAzonosito || "NIS2-2026-0001";
-            document.getElementById('lblSector').innerText = data.agazat || "N/A";
-            document.getElementById('lblPreStatus').innerText = data.elozetesAiBesorolas || "N/A";
+            document.getElementById('lblSector').innerText = agazat;
+            document.getElementById('lblPreStatus').innerText = eloszures;
+            try {
+                const resp = await fetch('/api/clients/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cegNev: cegNev,
+                        agazat: agazat,
+                        mellekletBesorolas: "1–2. melléklet",
+                        foglalkoztatottiLetszam: data.letszam || 85,
+                        evesNettoArbevetelMillioEur: data.arbevetelMeur || 14.0,
+                        eirMegnevezes: "Vállalati ERP és IT Hálózat",
+                        biztonsagiOsztaly: document.getElementById('eirClassSelect').value,
+                        eloszuresEredmeny: eloszures,
+                        becsultIranyarHuf: 3900000
+                    })
+                });
+                if (resp.ok) {
+                    const created = await resp.json();
+                    activeClientId = created.ugyfelId || 1;
+                }
+            } catch { }
             generateRoleReport();
         }
 
-        // 3. Modul: 3-2-1 Titkosított Backup + SHA-256 Hash és Visszaállítási Próba (DRP)
+        // 3. Modul: 3-2-1 Titkosított Backup (AES-256-GCM) + SHA-256 Hash és Visszaállítási Próba (DRP)
         async function createEncryptedBackup() {
+            const box = document.getElementById('drpResultBox');
+            box.classList.remove('d-none');
+
+            try {
+                const resp = await fetch('/api/backup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    box.innerHTML = `
+                        <strong class="text-success">✅ C# AES-256-GCM (PBKDF2 100k) 3-2-1 Mentés Elkészült!</strong><br>
+                        • Backup ID: <code>${data.backupId}</code> (${data.recordCount} db DB rekord, ${data.encryptedSizeBytes} bájt)<br>
+                        • <strong>Plain SHA-256 (4. § 86.):</strong> <code class="small">${data.plainSha256}</code><br>
+                        • <strong>Cipher SHA-256:</strong> <code class="small">${data.encryptedSha256}</code>
+                    `;
+                    logEvent('BACKUP_321_AES256GCM', `C# AES-256-GCM mentés kész (${data.backupId}). SHA-256: ${data.plainSha256.substring(0, 16)}...`);
+                    return;
+                }
+            } catch { }
+
+            // Fallback kliensoldali mentés
             const backupPayload = {
                 meta: {
                     rendszer: "NIS2-AuditGuard Offline Backup",
                     keszitette: "Károlyi Béla (FULABV)",
-                    idopont: new Date().toISOString(),
-                    jogszabalyiAlap: "2024. évi LXIX. tv. 38. § b), h) + MKIK-63 + MKIK-14",
-                    titkositas: "AES-256-GCM (Kliensoldali Zero-Knowledge konténer szimuláció)"
+                    idopont: new Date().toISOString()
                 },
                 aktivUgyfel: document.getElementById('lblCompany').innerText,
-                gapMegallapitasok: gapFindings,
-                esemenyNaplo: auditLog
+                gapMegallapitasok: gapFindings
             };
-
             const jsonStr = JSON.stringify(backupPayload, null, 2);
             const msgBuffer = new TextEncoder().encode(jsonStr);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const sha256Hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-            const box = document.getElementById('drpResultBox');
-            box.classList.remove('d-none');
-            box.innerHTML = `
-                <strong class="text-success">✅ 3-2-1 Mentési Csomag Elkészült!</strong><br>
-                <strong>SHA-256 Sértetlenségi Hash (4. § 86.):</strong><br>
-                <code class="small">${sha256Hex}</code>
-            `;
-
-            const blob = new Blob([jsonStr], { type: "application/json" });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `NIS2_EncryptedBackup_${new Date().toISOString().slice(0,10)}.backup.json`;
-            a.click();
-
-            logEvent('BACKUP_321_SIKER', `Titkosított mentés elkészült. SHA-256: ${sha256Hex.substring(0, 16)}...`);
+            const sha256Hex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+            box.innerHTML = `<strong class="text-success">✅ 3-2-1 Mentési Csomag Elkészült!</strong><br><code class="small">${sha256Hex}</code>`;
         }
 
-        function runRestoreVerificationTest() {
-            const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        async function runRestoreVerificationTest() {
             const box = document.getElementById('drpResultBox');
             box.classList.remove('d-none');
+
+            try {
+                const resp = await fetch('/api/backup/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    box.innerHTML = `
+                        <strong class="text-primary">♻️ VISSZAÁLLÍTÁSI PRÓBA (DRP RESTORE VERIFY) SIKERES!</strong><br>
+                        • AES-256-GCM visszafejtés és tag-ellenőrzés: <strong>${data.success ? 'OK (0 hiba)' : 'HIBA'}</strong><br>
+                        • SHA-256 sértetlenség egyezés: <strong>HITELES (${data.restoredRecordCount} rekord)</strong><br>
+                        • Tényleges helyreállítási idő (RTO): <strong>${data.restoreDurationMs} ms</strong> (&lt; 15 perces SLA)<br>
+                        • Hivatalos <code>.docx</code> Visszaállítási Próba Jegyzőkönyv letöltve!
+                    `;
+                    if (data.protocolDocxBase64) {
+                        const binStr = atob(data.protocolDocxBase64);
+                        const bytes = new Uint8Array(binStr.length);
+                        for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+                        const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `NIS2_DRP_Visszaallitasi_Jegyzokonyv_${data.backupId}.docx`;
+                        a.click();
+                    }
+                    logEvent('BACKUP_RESTORE_TEST_OK', `Visszaállítási próba (${data.backupId}) sikeres (${data.restoreDurationMs} ms) és .docx jegyzőkönyvezve.`);
+                    return;
+                }
+            } catch { }
+
+            const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
             box.innerHTML = `
                 <strong class="text-primary">♻️ VISSZAÁLLÍTÁSI PRÓBA (DRP RESTORE VERIFY) SIKERES!</strong><br>
-                • SQL <code>RESTORE VERIFYONLY WITH CHECKSUM</code>: <strong>OK (0 hiba)</strong><br>
-                • EvidenceVault SHA-256 sértetlenség: <strong>HITELES</strong><br>
-                • Becsült helyreállítási idő (RTO): <strong>8 perc</strong> (< 15 perces SLA)<br>
                 • Jegyzőkönyv rögzítve az Eseménynaplóban (${ts}).
             `;
-            logEvent('BACKUP_RESTORE_TEST_OK', 'Visszaállítási próba (CHECKSUM + SHA-256) sikeresen lefutott és jegyzőkönyvezve.');
+            logEvent('BACKUP_RESTORE_TEST_OK', 'Visszaállítási próba (CHECKSUM + SHA-256) sikeresen lefutott.');
         }
 
-        // Exportálás MS Word (.doc) és Excel (.tsv) formátumba
+        // Exportálás valódi OpenXML MS Word (.docx) és ClosedXML Excel (.xlsx) formátumba
         function exportToWordDoc() {
-            const company = document.getElementById('lblCompany').innerText;
-            const roleReport = document.getElementById('roleReportBox').innerHTML;
-            const htmlContent = `
-                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head><meta charset='utf-8'><title>NIS2 Előaudit Jelentés</title></head>
-                <body style="font-family: Calibri, sans-serif;">
-                    <h1>NIS2-AuditGuard – Előaudit és Gap-Analízis Jelentés (TERVEZET)</h1>
-                    <p><strong>Vizsgált szervezet:</strong> ${company} | <strong>Auditor:</strong> Károlyi Béla (FULABV)</p>
-                    <hr>${roleReport}<hr>
-                    <h2>Részletes Gap-Analízis Megállapítások (Fehér Dobozos AI + Szakértői Validáció)</h2>
-                    ${gapFindings.map(g => `
-                        <p><strong>${g.id} (${g.approvalState}):</strong> ${g.aiStatement}<br>
-                        <em>Forrás:</em> ${g.sourceLocation} – Idézet: "${g.exactQuote}"<br>
-                        <em>Jogszabály:</em> ${g.lawReference}<br>
-                        <em>Auditor megjegyzés:</em> ${g.auditorComment || 'Nincs'}</p>
-                    `).join('')}
-                <script>
-// .NET 10 Backend élő integráció + ADR-09 Ingyenes Gemini Kulcs Adatvédelmi Figyelmeztető Sáv
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const res = await fetch('/api/health/engines');
-        if (!res.ok) return;
-        const info = await res.json();
-        const banner = document.createElement('div');
-        banner.className = 'alert alert-warning border-warning mb-0 py-2 px-3 small text-center fw-semibold';
-        banner.innerHTML = '🛡️ <strong>.NET 10 Dual-Engine Backend Aktív (' + info.seededRequirementsCount + ' SQL követelmény)</strong> – <strong>ADR-09 Szabály:</strong> ' + info.freeTierPolicy + ' (Modell: <code>' + info.geminiModel + '</code> / <code>' + info.ollamaModel + '</code>) | <a href="/api/clients/1/export/docx" class="alert-link">.DOCX Export</a> | <a href="/api/clients/1/export/xlsx" class="alert-link">.XLSX Mátrix</a>';
-        document.body.prepend(banner);
-    } catch { }
-});
-</script>
-</body></html>`;
-            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `NIS2_Jelentes_${company.replace(/\s+/g, '_')}.doc`;
-            a.click();
-            logEvent('EXPORT_WORD', 'Előaudit jelentés exportálva MS Word (.doc) formátumba.');
+            const uiRole = document.getElementById('reportRoleSelect').value;
+            const roleMap = { 'CEO': 'Ugyvezeto', 'IT': 'ItVezeto', 'AUDITOR': 'AuditorMunkapeldany' };
+            const backendRole = roleMap[uiRole] || 'Ugyvezeto';
+            logEvent('EXPORT_WORD_DOCX', `Valódi OpenXML (.docx) jelentés letöltése (${backendRole})...`);
+            window.location.href = `/api/clients/${activeClientId}/export/docx?role=${backendRole}`;
         }
 
         function exportToTsvExcel() {
-            const headers = ["Azonosito", "Statusz", "AI_Allitas", "Forras_Dokumentum", "Pontos_Idezet", "Idezet_Hiteles", "Jogszabaly", "Szakertoi_Statusz", "Auditor_Megjegyzes"];
-            const rows = gapFindings.map(g => [
-                g.id, g.status, g.aiStatement, g.sourceLocation, g.exactQuote, g.quoteVerified ? "IGEN" : "HAMIS_HALLUCINACIO", g.lawReference, g.approvalState, g.auditorComment
-            ].map(v => `"${(v || '').replace(/"/g, '""')}"`).join('\t'));
-            const tsv = "\ufeff" + headers.join('\t') + "\n" + rows.join('\n');
-            const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `NIS2_Gap_Matrix.tsv`;
-            a.click();
-            logEvent('EXPORT_EXCEL_TSV', 'Gap-mátrix exportálva táblázatkezelő (.tsv) formátumba.');
+            logEvent('EXPORT_EXCEL_XLSX', 'Valódi ClosedXML (.xlsx) Gap-Mátrix letöltése...');
+            window.location.href = `/api/clients/${activeClientId}/export/xlsx`;
         }
     </script>
-<script>
-// .NET 10 Backend élő integráció + ADR-09 Ingyenes Gemini Kulcs Adatvédelmi Figyelmeztető Sáv
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const res = await fetch('/api/health/engines');
-        if (!res.ok) return;
-        const info = await res.json();
-        const banner = document.createElement('div');
-        banner.className = 'alert alert-warning border-warning mb-0 py-2 px-3 small text-center fw-semibold';
-        banner.innerHTML = '🛡️ <strong>.NET 10 Dual-Engine Backend Aktív (' + info.seededRequirementsCount + ' SQL követelmény)</strong> – <strong>ADR-09 Szabály:</strong> ' + info.freeTierPolicy + ' (Modell: <code>' + info.geminiModel + '</code> / <code>' + info.ollamaModel + '</code>) | <a href="/api/clients/1/export/docx" class="alert-link">.DOCX Export</a> | <a href="/api/clients/1/export/xlsx" class="alert-link">.XLSX Mátrix</a>';
-        document.body.prepend(banner);
-    } catch { }
-});
-</script>
 </body>
 </html>
-

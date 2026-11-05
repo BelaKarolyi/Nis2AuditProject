@@ -169,8 +169,8 @@ public sealed class DualEngineAiOrchestrator(
     {
         var firstPage = doc.Pages.FirstOrDefault() ?? new DocumentPage(1, string.Empty);
         var sentences = firstPage.Text
-            .Split(['.', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(s => s.Length >= 20)
+            .Split([". ", "\n", "\r"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(s => s.Length >= 20 && !s.StartsWith("[OLDAL", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         // Kulcsszó-keresés a követelmény leírásából a dokumentum mondatai között.
@@ -186,8 +186,8 @@ public sealed class DualEngineAiOrchestrator(
         foreach (var page in doc.Pages)
         {
             var pageSentences = page.Text
-                .Split(['.', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(s => s.Length >= 15);
+                .Split([". ", "\n", "\r"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(s => s.Length >= 15 && !s.StartsWith("[OLDAL", StringComparison.OrdinalIgnoreCase));
             foreach (var s in pageSentences)
             {
                 if (keywords.Any(k => s.Contains(k, StringComparison.OrdinalIgnoreCase)))
@@ -200,7 +200,7 @@ public sealed class DualEngineAiOrchestrator(
             if (matchedQuote is not null) break;
         }
 
-        matchedQuote ??= sentences.FirstOrDefault() ?? "NEM TALÁLHATÓ";
+        matchedQuote ??= sentences.LastOrDefault() ?? "NEM TALÁLHATÓ";
         var hasQuote = matchedQuote != "NEM TALÁLHATÓ";
 
         return new WhiteBoxAiGapResult
@@ -246,9 +246,11 @@ public sealed class DualEngineAiOrchestrator(
         {anonymizedDoc}
         </anonimizalt_dokumentum>
 
-        Válaszolj KIZÁRÓLAG érvényes JSON formátumban az alábbi mezőkkel:
+        Válaszolj KIZÁRÓLAG érvényes, tömör JSON formátumban az alábbi mezőkkel:
         mit_allit_az_ai, mire_alapozza_pontos_idezet, mely_dokumentumbol_oldal_szakasz,
         mely_kovetelmenyhez_kapcsolodik, mennyire_biztos_szazalek, mit_kell_a_szakertonek_ellenoriznie,
         jogszabaly_altal_eloirt_hiany, ai_altal_javasolt_jo_gyakorlat, generalt_audit_kerdesek.
+        KRITIKUS SZABÁLY: A mire_alapozza_pontos_idezet mezőbe KÖTELEZŐ karakterre pontosan, szó szerint átmásolnod az <anonimizalt_dokumentum>-ban található leginkább releváns mondatot (ne írj 'NEM TALÁLHATÓ'-t, ha van szöveg a dokumentumban, és ne fogalmazd át)!
         """;
 }
+
